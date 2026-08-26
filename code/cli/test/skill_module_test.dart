@@ -451,30 +451,219 @@ void main() {
     });
   });
 
-  group('doctor', () {
-    test('reports the machine before anything is deployed', () async {
+  group('doctor - the machine', () {
+    test('reports hosts and the ledger before anything is deployed', () async {
       final (code, out) = await run(['skill', 'doctor']);
       expect(code, 0);
+      expect(out, contains('Hosts detected'));
       expect(out, contains('claude'));
       expect(out, contains('not written yet'));
+      expect(out, contains('Nothing is recorded yet'));
     });
 
-    test('counts what this consumer owns', () async {
-      await run(['skill', 'deploy', '--host', 'claude', '--scope', 'global',
-        '--all', '--apply', '--autoapprove']);
+    test('names the hosts it did NOT find (R7.4 works both ways)', () async {
       final (_, out) = await run(['skill', 'doctor']);
-      expect(out, contains('intact:  2'));
+      expect(out, contains('codex'));
+      expect(out, contains('Hosts not found'));
     });
 
-    test('drift is a finding, and names the artifact', () async {
-      await run(['skill', 'deploy', '--host', 'claude', '--scope', 'global',
-        '--all', '--apply', '--autoapprove']);
+    test('reports where each host path came from (R14.2)', () async {
+      final (_, out) = await run(['skill', 'doctor']);
+      expect(out, contains('Where the host paths came from'));
+      expect(out, contains('2026-08-26'));
+      expect(out, contains('unverified again'));
+    });
+  });
+
+  group('doctor - what the ledger claims', () {
+    Future<void> deployAll() => run([
+      'skill', 'deploy', '--host', 'claude', '--scope', 'global', '--all',
+      '--apply', '--autoapprove',
+    ]);
+
+    test('counts what this consumer owns and leaves it healthy', () async {
+      await deployAll();
+      final (code, out) = await run(['skill', 'doctor']);
+      expect(code, 0);
+      expect(out, contains('intact: 2'));
+    });
+
+    test('drift is named, counted, and makes the run unhealthy', () async {
+      await deployAll();
       File(p.join(claudeSkills(), 'legion', 'SKILL.md')).writeAsStringSync('edited');
 
       final (code, out) = await run(['skill', 'doctor']);
       expect(code, isNot(0));
-      expect(out, contains('Modified since deployment:          1'));
+      expect(out, contains('Modified since deployment: 1'));
       expect(out, contains('legion'));
+    });
+
+    test('a deleted artifact is MISSING, not modified', () async {
+      // The defect this whole change began with. An absent directory hashes as
+      // an empty tree, so it used to report as "modified at the destination"
+      // with a remedy that was the opposite of the right one.
+      await deployAll();
+      Directory(p.join(claudeSkills(), 'legion')).deleteSync(recursive: true);
+
+      final (code, out) = await run(['skill', 'doctor']);
+      expect(code, isNot(0));
+      expect(out, contains('gone from the destination'));
+      expect(out, isNot(contains('Modified since deployment')));
+    });
+
+    test('missing tells you to deploy; drift tells you deploy will block',
+        () async {
+      await deployAll();
+      Directory(p.join(claudeSkills(), 'legion')).deleteSync(recursive: true);
+      File(p.join(claudeSkills(), 'kritik', 'SKILL.md')).writeAsStringSync('edited');
+
+      final (_, out) = await run(['skill', 'doctor']);
+      expect(out, contains('an ordinary deploy will recreate it'));
+      expect(out, contains('deploy will block rather than lose the edits'));
+    });
+
+    test('and the remedies are true - missing really does recreate', () async {
+      await deployAll();
+      Directory(p.join(claudeSkills(), 'legion')).deleteSync(recursive: true);
+
+      final (_, planned) = await run([
+        'skill', 'deploy', '--host', 'claude', '--scope', 'global',
+        '--skill', 'legion', '--plan',
+      ]);
+      expect(planned, contains('create'),
+          reason: 'doctor promised an ordinary deploy would recreate it');
+      expect(planned, isNot(contains('block')));
+    });
+
+    test('intact rows are counted, not listed', () async {
+      // A wall of correct lines buries the two that are not.
+      await deployAll();
+      final (_, out) = await run(['skill', 'doctor']);
+      expect(out, contains('intact: 2'));
+      expect(out, isNot(contains(p.join(claudeSkills(), 'kritik'))));
+    });
+  });
+
+  group('doctor - what the ledger does not know', () {
+    void plantForeign(String name, {String? origin}) {
+      final f = File(p.join(claudeSkills(), name, 'SKILL.md'));
+      f.parent.createSync(recursive: true);
+      f.writeAsStringSync(
+        '---\nname: $name\ndescription: Planted by another tool.\n'
+        '${origin == null ? '' : 'metadata:\n  skillwire-origin: $origin\n'}'
+        '---\n',
+      );
+    }
+
+    test('a directory nobody recorded is reported, under its directory', () async {
+      plantForeign('macss-plan');
+      final (code, out) = await run(['skill', 'doctor']);
+      expect(out, contains('What the ledger does not know'));
+      expect(out, contains(claudeSkills()));
+      expect(out, contains('macss-plan'));
+      expect(out, contains('read by claude/global'));
+      // An ordinary machine has other tools on it. Calling that unhealthy would
+      // teach the user to ignore the word.
+      expect(code, 0);
+    });
+
+    test('a declared origin is reported as appearance, never as ownership',
+        () async {
+      plantForeign('macss-plan', origin: 'macss');
+      final (_, out) = await run(['skill', 'doctor']);
+      expect(out, contains('appears to be from: macss'));
+    });
+
+    test('what this consumer deployed is not reported as unknown', () async {
+      await run(['skill', 'deploy', '--host', 'claude', '--scope', 'global',
+        '--all', '--apply', '--autoapprove']);
+      final (_, out) = await run(['skill', 'doctor']);
+      expect(out, contains('Nothing in reach of a detected host is unaccounted for'));
+    });
+
+    test('R6.11 - the reserved synced directory is not an unknown occupant',
+        () async {
+      // Claude Code fills it from claude.ai. It is a known occupant, not an
+      // unaccounted one.
+      final f = File(p.join(claudeSkills(), 'synced', 'SKILL.md'));
+      f.parent.createSync(recursive: true);
+      f.writeAsStringSync('---\nname: synced\ndescription: from claude.ai\n---\n');
+
+      final (code, out) = await run(['skill', 'doctor']);
+      expect(code, 0);
+      expect(out, contains('Nothing in reach of a detected host is unaccounted for'));
+      expect(out, isNot(contains('synced')));
+    });
+
+    test('occupants are grouped by directory, not listed one per line', () async {
+      // Five names in two directories is six lines grouped and thirty listed,
+      // and the grouped form is the one that shows the shape: the same five
+      // things, twice over.
+      for (final n in ['a-one', 'a-two', 'a-three']) {
+        plantForeign(n);
+      }
+      final (_, out) = await run(['skill', 'doctor']);
+      expect(out, contains(claudeSkills()));
+      expect(out, contains('a-one, a-three, a-two'));
+      // The directory is named once, not once per occupant.
+      expect(claudeSkills().allMatches(out).length, 1);
+    });
+
+    test('a verdict line says why the exit code is what it is', () async {
+      plantForeign('macss-plan');
+      final (code, out) = await run(['skill', 'doctor']);
+      expect(code, 0);
+      expect(out, contains('Verdict'));
+      expect(out, contains('nothing to act on'));
+    });
+
+    test('a directory with no SKILL.md is not an artifact at all', () async {
+      Directory(p.join(claudeSkills(), 'notes')).createSync(recursive: true);
+      final (_, out) = await run(['skill', 'doctor']);
+      expect(out, isNot(contains('notes')));
+    });
+
+    test('doctor creates nothing while looking', () async {
+      // A diagnostic that leaves a directory behind is not a diagnosis.
+      final before = Directory(home).listSync(recursive: true).length;
+      await run(['skill', 'doctor']);
+      expect(Directory(home).listSync(recursive: true).length, before);
+    });
+  });
+
+  group('doctor - one artifact, more than one directory', () {
+    test('R6.5 - both OpenCode spellings holding one name is actionable',
+        () async {
+      // OpenCode resolves its own tree with {skill,skills}, so it sees two
+      // things the user can invoke that both claim to be legion.
+      for (final spelling in ['skill', 'skills']) {
+        final f = File(p.join(
+          home, '.config', 'opencode', spelling, 'legion', 'SKILL.md',
+        ));
+        f.parent.createSync(recursive: true);
+        f.writeAsStringSync('---\nname: legion\ndescription: d\n---\n');
+      }
+
+      final (code, out) = await run(['skill', 'doctor']);
+      expect(code, isNot(0));
+      expect(out, contains('One artifact, more than one directory'));
+      expect(out, contains('Needs attention'));
+      expect(out, contains('Verdict'));
+    });
+
+    test('the deliberate two-host deployment is expected, not a fault', () async {
+      // Deploying to claude and opencode at global scope necessarily puts
+      // legion where OpenCode sees it twice: it reads ~/.claude/skills and
+      // cannot be prevented (PRD 7.4). No arrangement avoids it.
+      await run(['skill', 'deploy', '--host', 'claude,opencode', '--scope',
+        'global', '--all', '--apply', '--autoapprove']);
+
+      final (code, out) = await run(['skill', 'doctor']);
+      expect(code, 0, reason: 'irreducible is not a fault');
+      expect(out, contains('Irreducible'));
+      // Counted and named on one line, not spelled out per artifact: nobody can
+      // do anything about it, so detail would only bury what they can.
+      expect(out, contains('kritik, legion'));
     });
   });
 

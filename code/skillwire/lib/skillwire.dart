@@ -10,6 +10,17 @@ library;
 
 export 'src/hash/content_hash.dart' show contentHash;
 
+export 'src/diagnose/diagnosis.dart'
+    show
+        ClaimedUnit,
+        Diagnosis,
+        DuplicateArtifact,
+        FoundArtifact,
+        HostScope,
+        LedgerClaim,
+        UnmanagedArtifact,
+        diagnose;
+
 export 'src/hosts/host_matrix.dart'
     show HostDirectory, HostEntry, HostMatrix, Provenance, VisibilityEdge;
 

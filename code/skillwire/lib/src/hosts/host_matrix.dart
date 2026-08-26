@@ -199,19 +199,33 @@ class HostMatrix {
     return chosen;
   }
 
-  /// Every directory this package **observes** for [id] at [scope], including
-  /// alias spellings.
+  /// Every directory this package **observes** for [id] at [scope]: the host's
+  /// own directories, their alias spellings, and every directory the visibility
+  /// graph says this host reads.
   ///
-  /// Wider than [destination] on purpose (R6.9): an artifact sitting in a
-  /// directory the host reads participates in the one-path invariant whether or
-  /// not this package would ever write there, and a collision the package
-  /// cannot see is one it cannot report.
-  List<String> observed(String id, Scope scope) => [
-    for (final d in host(id).skills[scope] ?? const <HostDirectory>[]) ...[
-      d.template,
-      ...d.aliases,
-    ],
-  ];
+  /// Wider than [destination] on purpose (R6.9). An artifact sitting anywhere
+  /// the host reads participates in the one-path invariant whether or not this
+  /// package would ever write there, and a collision the package cannot see is
+  /// one it cannot report.
+  ///
+  /// The borrowed directories come from [visibility] rather than being repeated
+  /// in each host's own list. They are already stated there, and a fact written
+  /// twice is a fact that can disagree with itself.
+  List<String> observed(String id, Scope scope) {
+    final out = <String>[];
+    void add(String path) {
+      if (!out.contains(path)) out.add(path);
+    }
+
+    for (final d in host(id).skills[scope] ?? const <HostDirectory>[]) {
+      add(d.template);
+      d.aliases.forEach(add);
+    }
+    for (final edge in visibility) {
+      if (edge.host == id && edge.scope == scope) add(edge.reads);
+    }
+    return out;
+  }
 
   /// Detected hosts, other than [id], that also read [directory] at [scope]
   /// (R7.2, R7.3, R7.4).

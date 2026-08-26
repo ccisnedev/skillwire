@@ -132,6 +132,27 @@ hosts:
       }
     });
 
+    test('R6.9 - observed includes what the visibility graph says a host reads', () {
+      // OpenCode reads ~/.claude/skills. Without this the one-path invariant
+      // could not see the very collision PRD 7.4 describes, because the
+      // directory belongs to another host and appears only in the graph.
+      expect(matrix.observed('opencode', Scope.global),
+          contains('~/.claude/skills'));
+      expect(matrix.observed('opencode', Scope.repo), contains('.claude/skills'));
+    });
+
+    test('a borrowed directory is not duplicated when a host also owns it', () {
+      final observed = matrix.observed('codex', Scope.repo);
+      expect(observed.where((d) => d == '.agents/skills'), hasLength(1));
+    });
+
+    test('R7.1 - Copilot does not observe Claude globally', () {
+      // The graph has that edge at repo scope only, so neither does this.
+      expect(matrix.observed('copilot', Scope.global),
+          isNot(contains('~/.claude/skills')));
+      expect(matrix.observed('copilot', Scope.repo), contains('.claude/skills'));
+    });
+
     test('observed is a superset of the destination for every host', () {
       for (final id in matrix.hostIds) {
         for (final scope in Scope.values) {
