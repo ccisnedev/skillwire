@@ -31,23 +31,23 @@ stages, each with a mechanically verifiable exit criterion.
 
 ## P2 — Hosts
 
-- [ ] Host matrix as a data file
-- [ ] Host detection
-- [ ] Visibility graph and its reporting, carried as plan annotations (§7.5)
-- [ ] `skill list` and `skill doctor`
+- [x] Host matrix as a data file
+- [x] Host detection
+- [x] Visibility graph and its reporting, carried as plan annotations (§7.5)
+- [x] `skill list` and `skill doctor`
 
 ## P3 — Deployment
 
-- [ ] `skill deploy` and `skill remove` as Steps
-- [ ] Ledger — one per machine, shared by every consumer (R11.5, R11.6)
-- [ ] Adoption of pre-package deployments (R10.6)
+- [x] `skill deploy` and `skill remove` as Steps
+- [x] Ledger — one per machine, shared by every consumer (R11.5, R11.6)
+- [x] Adoption of pre-package deployments (R10.6)
 - [ ] Manifest
-- [ ] Idempotence and every `block` state covered by a test
+- [x] Idempotence and every `block` state covered by a test
 
 ## P4 — `skillwire_cli`
 
-- [ ] The `skillwire` executable with its `sw` alias
-- [ ] Self-hosting: this repository deploys its own skills through it
+- [x] The `skillwire` executable with its `sw` alias
+- [x] Self-hosting: this repository deploys its own skills through it
 
 ## P5 — Adoption
 
@@ -55,7 +55,7 @@ stages, each with a mechanically verifiable exit criterion.
 - [ ] `inquiry` consumes the `skillwire` package
 - [ ] `inquiry`'s `clean()` narrowed to what it actually wrote — it deletes ten
       host directories wholesale today
-- [ ] The three transversal skills moved out of `inquiry` into `skillwire_cli`
+- [x] The three transversal skills moved out of `inquiry` into `skillwire_cli`
 - [ ] No forked deployment logic left in either
 
 ## P6 — Subagents
