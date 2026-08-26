@@ -392,14 +392,23 @@ mismatch, and that is the case to stop and investigate.
 The adoption mechanics are stated once at stage 51 and cross-referenced from
 stage 59.
 
-A third, smaller trap sits beside Hazard B: `macss` writes to
-`~/.config/opencode/skill` — **singular** —
-(`macss/code/cli/lib/modules/skill/host.dart:45-48`), while the PRD host matrix
-(§6.1) specifies `~/.config/opencode/skills/` — plural. Both directory names
-exist on this machine and hold disjoint sets of skill names; no byte-level
-comparison of the two trees was performed. Which one OpenCode
-actually reads is not established by the evidence base; under R14.1 it must be
-verified before either is written to as if settled. Stage 16 does that.
+**Hazard C — OpenCode already sees eight skills under two spellings.** `macss`
+writes to `~/.config/opencode/skill` — singular —
+(`macss/code/cli/lib/modules/skill/host.dart:45-48`) and `inquiry` to the
+plural. Both directories exist here with disjoint contents: five `macss-*` in
+one, `kritik`/`legion`/`research` in the other.
+
+This looked like a contradiction to resolve and is not. OpenCode 1.17.10
+resolves its own tree with `fa="{skill,skills}/**/SKILL.md"`, so **both
+spellings are read, and all eight skills are live under one invocation
+namespace** (PRD 6.4). Neither tool was wrong.
+
+The consequence is R6.5: the two spellings are **one destination** for the
+one-path invariant. Deploying the same artifact into both produces two things
+the user can invoke claiming to be the same skill — the collision R7.5 exists to
+prevent. Stage 22 seeds its fixture from exactly this machine's state, and the
+migrations at stages 51 and 59 must pick one spelling and record it in the
+ledger (R6.2), never write both.
 
 ---
 
@@ -1171,117 +1180,113 @@ test/reconcile_remove_test.dart test/reconcile_force_test.dart` exits 0.
 Exit criterion for the whole group, from PRD §15 row P2: `skill list` and
 `skill doctor` are correct on a real machine.
 
-### Stage 16 — Resolve the OpenCode skills directory before any path is written down
+### Stage 16 — Close Q5 and Q6 before any path is written down
 
-This stage exists because the evidence base surfaced a direct contradiction, and
-non-negotiable rule 5, with R14.1 behind it, forbids encoding either side of it
-as a fact until it is resolved.
+**Q4 is closed; this stage inherited its successors.** The original question was
+which OpenCode global directory to believe. The answer, read from
+`opencode.exe` 1.17.10 on 2026-08-26, is **both**: OpenCode resolves its own
+skill directories with the brace glob `fa="{skill,skills}/**/SKILL.md"` and the
+external namespaces with `Rt="skills/**/SKILL.md"`. Its help table says the same
+in its own notation — `` `~/.config/opencode/skill(s)/<name>/SKILL.md` ``. PRD
+6.4 records it and R6.5 draws the consequence.
 
-PRD Draft 2 stopped presenting the plural form as fact. The OpenCode row of §6.1
-now reads **unverified — see Q4**, R6.4 states the contradiction, and Q4 is the
-only open question on the critical path: it blocks OpenCode at `global` scope
-and nothing else. P2's exit criterion now includes closing it. This stage is
-what closes it — until it does, no deployment may target either directory.
+Neither `macss` (singular) nor `inquiry` (plural) was wrong, and the five
+`macss-*` directories in `~/.config/opencode/skill/` and the three in
+`~/.config/opencode/skills/` are **all live at once** on this machine.
 
-| Source | Global OpenCode skills path |
-|---|---|
-| PRD §6.1, the OpenCode row | `~/.config/opencode/skills/` — **plural** |
-| `macss/code/cli/lib/modules/skill/host.dart:45-48` | `~/.config/opencode/skill` — **singular** |
-| `inquiry/code/cli/lib/hosts/opencode_adapter.dart:14-15` | `p.join(homeDir, '.config', 'opencode', 'skills')` — **plural** |
-| This machine | **both** exist: `~/.config/opencode/skill/` holds the five `macss-*`; `~/.config/opencode/skills/` holds `kritik`, `legion`, `research` |
+That closure left two questions behind it, both found the same way and both on
+the critical path:
 
-`macss/code/cli/lib/modules/skill/host.dart` has been touched exactly twice
-(`git log --follow`: commits `6a1029c` and `02db9c9`) and reads singular today.
-`inquiry` is the direct source of the plural form, and by inference wrote the
-plural directory on this machine. That is another tool's belief, not evidence
-about what OpenCode reads. Note also that `inquiry` uses the **singular**
-`agent/` for OpenCode's *subagent* directory and pins it as a deliberate
-regression guard (`inquiry/code/cli/lib/hosts/opencode_adapter.dart:20-21`,
-`inquiry/code/cli/test/hosts_test.dart:70-78`), so OpenCode demonstrably does
-use singular directory names somewhere. Neither form can be assumed from the
-other.
+| # | The row that could not be sourced | Blocks |
+|---|---|---|
+| Q5 | Antigravity. PRD 6.1 carried `~/.gemini/antigravity/skills/` and `.agent/skills/` with no provenance in 14.1 at all. The installed layout is `~/.gemini/antigravity-cli/`, whose only skills sit in `builtin/skills/` — five, each a `SKILL.md` beside a `docs/` directory. No user-extensible directory was found | Antigravity, both scopes |
+| Q6 | Codex. 14.1's row was read from `codex.exe` **0.120.0**; the installed CLI is **0.146.0**. `~/.codex/plugins/` now exists — the location 6.2 associates with Q1 | Codex, and Q1 with it |
 
-- [ ] Step 1. `opencode` is on this machine's PATH at
-      `C:/Users/44358590/AppData/Roaming/fnm/node-versions/v20.19.4/installation/opencode`
-      (verified with `which opencode`). Record its version:
-      `opencode --version`.
-- [ ] Step 2. Apply the same technique PRD §14.1 used for Codex — string
-      extraction from the binary. The PATH entry is a POSIX shell shim, not a
-      symlink, and the OpenCode payload is a native binary, not JavaScript:
+R6.4 is what makes these visible rather than latent: a matrix row without
+provenance in 14.1 must be marked unverified and must **raise** rather than
+return a path. Stage 17 implements that refusal; this stage removes the reason
+to invoke it.
 
-```
-grep -ao "opencode/skills\?" \
-  "$(dirname "$(which opencode)")/node_modules/opencode-ai/bin/opencode.exe" \
-  | sort | uniq -c
-```
+- [ ] **Q5, step 1.** Record the installed Antigravity version and layout:
+      `ls ~/.gemini/antigravity-cli/` and whatever the `bin/` entry reports for
+      `--version`. Note that `agentapi.bat` is the only executable there.
+- [ ] **Q5, step 2.** Apply the technique that closed Q4 — read the host, not
+      the disk. Search the Antigravity payload for its skill-directory constants
+      the way `fa` and `Rt` were recovered from OpenCode. `builtin/skills/`
+      proves Antigravity consumes `SKILL.md`; it does **not** prove where a user
+      may add one.
+- [ ] **Q5, step 3.** Cross-check against Antigravity's official documentation.
+      Record the URL and the retrieval date.
+- [ ] **Q5, step 4.** Record the finding in
+      `docs/adr/0008-the-antigravity-skill-paths.md`, then amend PRD 6.1 with
+      the resolved paths, add the 14.1 rows with artifact, version and date
+      (R14.2), and delete the Q5 row from 14.2. **If no user-extensible
+      directory exists, that is a finding, not a failure**: record it, and drop
+      Antigravity from 6.1 to a documented non-destination rather than leaving a
+      row nobody can serve.
+- [ ] **Q6, step 1.** Re-read Codex 0.146.0 with the same extraction 14.1 used
+      for 0.120.0. Confirm or correct `CODEX_HOME/skills`, `~/.codex/skills`,
+      `.agents/skills`, and the `skills_watcher` symbol.
+- [ ] **Q6, step 2.** Update both 14.1 rows to cite 0.146.0 and today's date
+      (R14.2), and delete the Q6 row from 14.2. If a path changed between the
+      two versions, that fact belongs in the ADR too — it is evidence about how
+      fast this matrix decays, which is the argument R14.2 exists on.
+- [ ] **Both.** Confirm `~/.agents/` still does not exist on this machine, so
+      the neutral namespace of PRD 6.3 stays vacuous and is not silently
+      depended upon.
 
-      Run on this machine today this yields `2 opencode/skill` and
-      `2 opencode/skills` — **both** forms are present in the binary, which is
-      the answer step 4's "if both directory names are read" branch anticipates.
-      Record the extract verbatim in the ADR.
-- [ ] Step 3. Cross-check against OpenCode's official documentation, which PRD
-      §7.1 already cites as the source for three visibility edges. Record the
-      URL and the retrieval date.
-- [ ] Step 4. If steps 2 and 3 agree on one form, record the winner in
-      `docs/adr/0008-the-opencode-skills-directory.md` with both pieces of
-      evidence quoted, and amend PRD §6.1 if the PRD is the side that was wrong.
-      If they disagree, or if both directory names are read — which the binary
-      extract above already suggests — record **both** paths in the matrix and
-      let R6.2 resolve exactly one as the deploy destination.
-- [ ] Step 5. Record explicitly, in the same ADR, that the five `macss-*`
-      directories currently in `~/.config/opencode/skill/` are orphaned if the
-      plural form wins. They are not this project's to remove (non-negotiable
-      rule 1). `macss` ships `skill clean` today
-      (`macss/code/cli/lib/modules/skill/skill_builder.dart:33-41`), and stage
-      60 retires it; carry the orphan sweep as a named item into stage 59's
-      pre-upgrade sequence rather than fixing it here.
-
-- [ ] Step 6. Close Q4 in the PRD: replace the `**unverified — see Q4**` cell in
-      the §6.1 OpenCode row with the resolved path or paths, move Q4's substance
-      into §14.1 with its source, delete the Q4 row from §14.2, and delete R6.4.
-      A question that has been answered but left open in the contract is worse
-      than one never asked — the next reader cannot tell which state it is in.
-
-**Exit criterion.** `docs/adr/0008-the-opencode-skills-directory.md` exists and
-contains a quoted extract from the binary or the documentation, a retrieval
-date, and a one-line decision; and `grep -c "Q4" docs/PRD.md` reports 0. No path
-is written into the matrix at stage 18 until both hold.
+**Exit criterion.** `docs/adr/0008-the-antigravity-skill-paths.md` exists and
+carries a quoted extract or a documentation URL with a retrieval date;
+`grep -c "Q5\|Q6" docs/PRD.md` reports 0; every row of PRD 14.1 carries a
+version and a date (R14.2); and no row of PRD 6.1 reads `unverified`. No path is
+written into the matrix at stage 18 until all four hold.
 
 **Rollback.** None — this stage reads only.
 
 ### Stage 17 — Mark every unverified path in the matrix, and refuse to serve it
 
-PRD §14.1 lists what was verified during the design cycle: Codex's paths (binary
-0.120.0), Copilot's paths (GitHub documentation), and that OpenCode reads
-Claude's directories (OpenCode documentation). **Antigravity appears nowhere in
-that list.** Its two paths — `~/.gemini/antigravity/skills/` and `.agent/skills/`
-— therefore have no recorded provenance, and R14.1 forbids implementing against
-them. Claude Code's two paths are likewise absent from §14.1, though
-`C:/Users/44358590/.claude/skills/` is observable on this machine and contains
-eight directories.
+Stage 16 closes the two questions we know about. This stage builds the mechanism
+that would have surfaced them without anyone looking — **R6.4**: a matrix row
+whose provenance is absent from PRD 14.1 must be marked unverified, and
+resolving it must raise rather than return a path.
+
+That rule is what turned Antigravity from a plausible-looking table row into Q5.
+Its two paths sat in 6.1 for the whole of Draft 1 with no entry in 14.1 behind
+them, and nothing in the process objected. Claude Code's two paths are in the
+same position today: observable on this machine — `~/.claude/skills/` holds
+eight directories — but observation is not provenance, and R6.4 does not accept
+it as such.
 
 - [ ] Failing test first:
-      `code/skillwire/test/host_matrix_verification_test.dart`, group `'R14.1'`.
+      `code/skillwire/test/host_matrix_verification_test.dart`, group `'R6.4'`.
       - `'every path in the matrix carries a provenance record'`: asserts each
-        entry has a non-empty `source` and `verifiedOn` field.
+        entry has a non-empty `source`, `version` and `verifiedOn` field. All
+        three, because R14.2 makes a source without a version a claim about a
+        release nobody recorded.
       - `'asking for an unverified path throws rather than returning it'`:
         asserts `UnverifiedHostPath` (stage 6) is thrown for any entry whose
         provenance is the literal `unverified`.
-- [ ] Verify Antigravity's two paths against the Antigravity CLI or its official
-      documentation, and record the result in PRD §14.1 as a new row naming the
-      method used. If it cannot be verified, mark both entries `unverified` in
-      the data file and let the test above make the host unusable — a host that
-      throws is conforming; a host that guesses is not.
-- [ ] Verify Claude Code's two paths the same way and add the row.
+      - `'a row whose cited version is behind the installed one is unverified
+        again'`: R14.2's decay rule. Seed a matrix entry citing `0.120.0` with a
+        detected host reporting `0.146.0` and assert the same throw. This is the
+        assertion that would have caught Q6 by itself.
+- [ ] Verify Claude Code's two paths against the host or its official
+      documentation and add the 14.1 row with artifact, version and date. Claude
+      Code is the one host every consumer targets and the only one whose paths
+      have never been sourced.
+- [ ] Confirm the Antigravity outcome from stage 16 is reflected in the data
+      file — either resolved paths with provenance, or entries marked
+      `unverified` so the test above makes the host unusable. **A host that
+      throws is conforming; a host that guesses is not.**
 
 **Exit criterion.** `dart test test/host_matrix_verification_test.dart` exits 0,
-and the §14.1 table has gained at least two rows:
+and every row of PRD 14.1 carries a version and a date:
 
 ```
-awk '/^### 14.1/,/^### 14.2/' docs/PRD.md | grep -Ec 'Antigravity|Claude Code'
+awk '/^### 14.1/,/^### 14.2/' docs/PRD.md | grep -c '| 20[0-9][0-9]-'
 ```
 
-reports 2.
+reports the same number as there are fact rows in that table.
 
 ### Stage 18 — The host matrix as a data file (R6.3)
 
@@ -1495,6 +1500,20 @@ below are the same shape, and R7.8 says more will follow.
         host reads'`: OpenCode with the artifact already observed in
         `~/.claude/skills/x` and a desired deployment to
         `~/.config/opencode/skills/x` → verb `block`, detail naming both paths.
+      - group `'R6.5'` — `'the two spellings of an OpenCode directory are one
+        destination'`: the artifact observed in `~/.config/opencode/skill/x`
+        (singular) and desired at `~/.config/opencode/skills/x` (plural) →
+        verb `block`. **This is not a hypothetical fixture.** OpenCode resolves
+        its own directories with `{skill,skills}/**/SKILL.md`, so both are read
+        under one invocation name, and this machine is in that state right now:
+        five `macss-*` in the singular, three in the plural. Seed the test from
+        exactly that arrangement.
+      - group `'R6.5'` — `'the external namespaces are plural only'`: the same
+        artifact observed in a hypothetical `~/.claude/skill/x` is **not** a
+        collision, because `Rt="skills/**/SKILL.md"` means OpenCode never reads
+        a singular `.claude` or `.agents` directory. The brace expansion is
+        scoped to OpenCode's own tree, and an implementation that applied it
+        everywhere would block deployments that are legitimate.
       - group `'R7.5'` — `'does not block when the two directories belong to
         different hosts'`: the same two paths with only `claude` targeted and
         `opencode` not detected → not a block.
@@ -4310,9 +4329,9 @@ pre-upgrade clean.
 ## 14. Requirement traceability
 
 Every normative requirement id in the specification, and the stage that
-discharges it. PRD Draft 2 raised the count from 35 to **42**: R6.4, R7.7-R7.9,
-R10.6, R11.5, R11.6 and R12.7 are new, and four of the six gaps below closed as
-a result. **R12.0** is a normative naming rule with no phase row. Phase references point
+discharges it. PRD Draft 2 raised the count from 35 to **44**: R6.4, R6.5,
+R7.7-R7.9, R10.6, R11.5, R11.6, R12.7 and R14.2 are new, and four of the six
+gaps below closed as a result. **R12.0** is a normative naming rule with no phase row. Phase references point
 at the stage group that carries the phase.
 
 | Req | Discharged by | Note |
@@ -4325,7 +4344,8 @@ at the stage group that carries the phase.
 | R7.3 | Stage 31 | Removal visibility notice |
 | R7.4 | Stages 20, 21 | Only detected hosts named; stage 58 records that macss's marker-directory idea survives |
 | R7.5 | Stages 22, 33 | One-path invariant, pure and on disk |
-| R6.4 | Stage 16 | OpenCode's global directory unverified; Q4 blocks it, step 6 closes it |
+| R6.4 | Stages 16, 17 | A matrix row without provenance in 14.1 must refuse to resolve; this is what surfaced Q5 and Q6 |
+| R6.5 | Stages 22, 33 | OpenCode's two spellings are one destination for R7.5; the brace glob is scoped to its own tree |
 | R7.6 | Stage 22 | Closed by PRD Draft 2: carried as an annotation, §7.5 |
 | R7.7 | Stage 22 | An annotation never changes a verb nor refuses `--apply` |
 | R7.8 | Stages 21, 22 | R7.2, R7.3 and R7.6 share one annotation type |
@@ -4358,6 +4378,7 @@ at the stage group that carries the phase.
 | R13.4 | Stages 53, 62 | Each consumer holds its own `assets/skills/modules/`; no copying between layers |
 | R13.5 | Stage 43 | Conformance to `SKILL.md` is sufficient |
 | R14.1 | Stages 16, 17, 61 | Every matrix path carries provenance; unverified paths throw |
+| R14.2 | Stage 17 | Provenance carries artifact, version and date; a row behind the installed version is unverified again |
 | R15.1 | Stages 5, 28, 29 | `kind` and `subagent` in the signature, the ledger key and the manifest from P1 |
 
 **Gaps — requirements no stage fully discharges.** These are real and must stay
@@ -4370,10 +4391,17 @@ visible.
    host in the data file and stage 28 records the resolved value, but the
    preference order itself is a judgement made once and must be reviewed when a
    host's directory list changes.
-2. **Q1 and Q2 are open.** See section 15. Q3 gates hooks, which are in the
-   roadmap Backlog and in no phase. **Q4 is open and on the critical path** —
-   unlike the other three it blocks a supported host in a shipped phase, and
-   stage 16 is the stage that closes it.
+2. **Q1, Q2, Q3, Q5 and Q6 are open.** Q1 and Q2 gate subagents and Q3 gates
+   hooks; all three are outside this runbook's committed scope — see section 15.
+   **Q5 (Antigravity) and Q6 (Codex 0.146.0) are on the critical path**: each
+   blocks a supported host in a shipped phase. Stage 16 closes both, and stage
+   17 builds the rule that would have surfaced them unaided.
+
+   Q4 was on this list and is **closed**: OpenCode reads both spellings of its
+   own directory. It is worth keeping the shape of that answer in mind for Q5
+   and Q6 — what was on disk showed two directories and implied a choice, and
+   the binary showed there was no choice to make. Disk state is a symptom; the
+   host is the source.
 
 **Closed by PRD Draft 2.** Four gaps in the list above have gone, and the record
 of what closed them belongs here rather than in a commit message:
@@ -4385,9 +4413,13 @@ of what closed them belongs here rather than in a commit message:
 | The typed error hierarchy had no requirement id and appeared in no phase row | **R12.7**, and P1's contents row in PRD §15 now names it |
 | Deploy over a state-6 unit under `--force` was unspecified | **R10.6, adoption.** Hash-equal adopts into the ledger with no destination write; hash-different stays `block`. This is what makes the stage 51 and 59 migrations non-destructive |
 
-The fifth change is R6.4 and Q4: PRD §6.1 no longer presents OpenCode's global
-directory as a fact. That did not close a gap — it opened one that was there all
-along, unrecorded.
+The fifth change was R6.4, which no longer lets §6.1 present any path as a fact
+without provenance in §14.1. That closed no gap — it opened the ones that were
+there all along, unrecorded. Applying it immediately produced three findings:
+Q4 resolved to "both spellings" rather than to either; **Q5**, because
+Antigravity's two paths had never been sourced at all; and **Q6**, because
+Codex's were read from a binary twenty-six minor versions behind the installed
+one. R14.2 makes that last kind of decay detectable rather than silent.
 
 ---
 

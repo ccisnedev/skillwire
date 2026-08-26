@@ -7,10 +7,17 @@
 > **Draft 2** closes the six gaps the runbook's traceability pass found in
 > Draft 1: plan annotations (7.5) give R7.6 a carrier it did not have; R10.6
 > settles what `deploy --force` does to a state 6 unit; R11.3 names its two
-> timestamps; R11.5 makes the ledger one shared file and says where; R12.7 gives
-> the typed error hierarchy a requirement id; and R6.4 stops presenting
-> OpenCode's global directory as a fact, opening Q4. See
+> timestamps; R11.5 makes the ledger one shared file and says where; and R12.7
+> gives the typed error hierarchy a requirement id. See
 > [`docs/runbook.md`](runbook.md) §14.
+>
+> It then re-read the host matrix against the hosts actually installed. OpenCode
+> reads **both** spellings of its own directory (6.4) — closing Q4, adding R6.5,
+> and vindicating `macss` and `inquiry` alike, since neither was wrong.
+> Antigravity's two paths turned out to have no provenance at all and are now
+> Q5; Codex's were read from a binary twenty-six minor versions old and are now
+> Q6. R6.4 generalised into the rule that made both visible: a matrix row
+> without provenance in 14.1 must refuse to resolve.
 
 ---
 
@@ -128,9 +135,12 @@ any other meaning. The three things the word `skillwire` names are separated in
 |---|---|---|
 | Claude Code | `~/.claude/skills/` | `.claude/skills/` |
 | Codex | `$CODEX_HOME/skills/` — default `~/.codex/skills/` | `.agents/skills/` |
-| Antigravity | `~/.gemini/antigravity/skills/` | `.agent/skills/` |
-| OpenCode | **unverified — see Q4** · `~/.claude/skills/` · `~/.agents/skills/` | `.opencode/skills/` · `.claude/skills/` · `.agents/skills/` |
+| Antigravity | **unverified — see Q5** | **unverified — see Q5** |
+| OpenCode | `~/.config/opencode/skill/` **·** `~/.config/opencode/skills/` · `~/.claude/skills/` · `~/.agents/skills/` | `.opencode/skill/` **·** `.opencode/skills/` · `.claude/skills/` · `.agents/skills/` |
 | GitHub Copilot | `~/.copilot/skills/` · `~/.agents/skills/` | `.github/skills/` · `.claude/skills/` · `.agents/skills/` |
+
+OpenCode's own directory exists in **both** spellings and both are read; see
+6.4. Every other host names one spelling only.
 
 **Normative requirements**
 
@@ -141,12 +151,10 @@ any other meaning. The three things the word `skillwire` names are separated in
   resolve to exactly one of them, and that choice MUST be recorded in the ledger.
 - **R6.3** The host matrix MUST live in a data file, not in code. Adding a host
   is a data change.
-- **R6.4** OpenCode's own global directory is **not established**. Both
-  `~/.config/opencode/skill` (singular) and `~/.config/opencode/skills` (plural)
-  exist on the author's machine holding disjoint sets of skills, and string
-  extraction from the OpenCode binary yields both forms. Under R14.1 no
-  deployment may target either until Q4 is closed. OpenCode's other two global
-  directories are unaffected, and so is every repo-scope path.
+- **R6.4** Every path in this matrix MUST carry provenance in 14.1. A row without
+  it MUST be marked unverified, and resolving it MUST raise rather than return a
+  path (R14.1). This is the general rule; Antigravity is currently its only
+  instance, tracked as Q5.
 
 ### 6.2 Subagent paths
 
@@ -167,6 +175,33 @@ Copilot. `~/.agents/plugins/` is used by Codex for its plugin marketplace.
 Deploying into `.agents/` reaches three hosts with one copy, at the cost of
 losing per-host variation, since all three read the same bytes. The `skillwire`
 package MUST expose this as an explicit destination, never as a hidden optimisation.
+
+### 6.4 OpenCode reads both spellings
+
+OpenCode 1.17.10 resolves its **own** skill directories with a brace glob and
+the external namespaces with a plain one. Both constants are recoverable from
+the binary:
+
+```
+pa=".claude"   la=".agents"
+Rt="skills/**/SKILL.md"           ← .claude and .agents: plural only
+fa="{skill,skills}/**/SKILL.md"   ← OpenCode's own: either spelling
+```
+
+Its own help table documents the same thing in its own notation —
+`` `~/.config/opencode/skill(s)/<name>/SKILL.md` `` and
+`` `.opencode/skill(s)/<name>/SKILL.md` ``.
+
+So `~/.config/opencode/skill/` and `~/.config/opencode/skills/` are not
+competing candidates to choose between: they are **one destination with two
+spellings, both live at once**. Neither `macss`, which writes the singular, nor
+`inquiry`, which writes the plural, was wrong.
+
+- **R6.5** The two spellings of an OpenCode directory MUST be treated as a
+  single destination for the one-path invariant (7.3). Deploying the same
+  artifact into both is the collision R7.5 exists to prevent, not two
+  deployments — the brace glob makes both visible under the same invocation
+  name.
 
 ---
 
@@ -508,17 +543,28 @@ code/cli/assets/skills/modules/
 
 This section exists so that no reader mistakes an assumption for a fact.
 
-### 14.1 Verified during this design cycle
+### 14.1 Verified
 
-| Fact | How |
-|---|---|
-| Codex skill paths: `CODEX_HOME/skills`, `~/.codex/skills`, `.agents/skills` | String extraction from `codex.exe` 0.120.0 |
-| Codex watches skill directories for changes | `skills_watcher` symbol in the same binary |
-| Copilot skill paths, and that `~/.claude/skills` is not among the personal ones | GitHub official documentation |
-| OpenCode reads Claude's directories at both scopes | OpenCode official documentation |
-| `npx skills` installs a whole module directory from a URL | Executed against a public repository with a nested layout |
-| `npx skills` keeps two lock files and emits install telemetry | Source files `skill-lock.ts`, `local-lock.ts`, `telemetry.ts` |
-| Windows junctions require no elevation | Executed locally |
+Every row carries the artifact it was read from and the date it was read. A row
+without a date is a claim about a version nobody recorded, which is how a
+verified fact quietly becomes a stale one.
+
+| Fact | How | Read |
+|---|---|---|
+| Codex skill paths: `CODEX_HOME/skills`, `~/.codex/skills`, `.agents/skills` | String extraction from `codex.exe` **0.120.0** | 2026-08-23 |
+| Codex watches skill directories for changes | `skills_watcher` symbol in the same binary | 2026-08-23 |
+| Copilot skill paths, and that `~/.claude/skills` is not among the personal ones | GitHub official documentation | 2026-08-23 |
+| OpenCode reads Claude's and `.agents`' directories, plural spelling only | Constants `pa=".claude"`, `la=".agents"`, `Rt="skills/**/SKILL.md"` in `opencode.exe` **1.17.10** | 2026-08-26 |
+| **OpenCode reads its own directory in both spellings** | Constant `fa="{skill,skills}/**/SKILL.md"` in the same binary, and its help table's `skill(s)` notation — see 6.4 | 2026-08-26 |
+| `npx skills` installs a whole module directory from a URL | Executed against a public repository with a nested layout | 2026-08-23 |
+| `npx skills` keeps two lock files and emits install telemetry | Source files `skill-lock.ts`, `local-lock.ts`, `telemetry.ts` | 2026-08-23 |
+| Windows junctions require no elevation | Executed locally | 2026-08-23 |
+
+- **R14.2** A row in this table MUST name the artifact and version it was read
+  from, and the date. When a host's installed version overtakes the version a
+  row cites, the row is **unverified again** until re-read. The machine that
+  wrote this document carries `codex-cli` **0.146.0**, twenty-six minor versions
+  past the row above; re-reading it is P2 work, tracked as Q6.
 
 ### 14.2 Open
 
@@ -527,19 +573,24 @@ This section exists so that no reader mistakes an assumption for a fact.
 | Q1 | Codex subagent format: the binary shows `agents/openai.yaml` inside `~/.agents/plugins/`; a secondary source reports TOML in `~/.codex/agents/`. Both may exist | Subagents |
 | Q2 | Subagent paths and formats for Antigravity and OpenCode | Subagents |
 | Q3 | Whether hooks have any destination in hosts other than Claude Code | Hooks |
-| Q4 | OpenCode's own global skills directory: `~/.config/opencode/skill` or `~/.config/opencode/skills`. Both exist on the author's machine with disjoint contents, and the binary yields both forms — see R6.4 | **OpenCode at `global` scope**, and nothing else |
+| Q5 | Antigravity's skill paths. 6.1 carried `~/.gemini/antigravity/skills/` and `.agent/skills/` with no provenance in 14.1. The installed layout is `~/.gemini/antigravity-cli/`, whose only skills live in `builtin/skills/` — five of them, each a `SKILL.md` beside a `docs/` directory. No user-extensible directory was found | **Antigravity, both scopes** |
+| Q6 | Whether Codex's paths still hold at `codex-cli` 0.146.0. 14.1's row was read from 0.120.0, and `~/.codex/plugins/` now exists on the author's machine — the location 6.2 associates with Q1 | Codex, and Q1 with it |
 
-Q1–Q3 block features not yet built. **Q4 blocks a supported host in a shipped
-phase** and is the only open question on the critical path: P2 cannot honestly
-report OpenCode's global destination, and P3 cannot deploy to it. Closing it
-means reading which directory OpenCode's own source consults — the package is
-present at `~/.config/opencode/node_modules` on the author's machine — or its
-official documentation, not inferring from what happens to be on disk.
+**Q4 is closed.** OpenCode reads both spellings of its own directory; see 6.4
+and the two 14.1 rows dated 2026-08-26.
+
+Q1–Q3 block features not yet built. **Q5 and Q6 block hosts in a shipped
+phase**, and are the open questions on the critical path: P2 cannot honestly
+report a destination it cannot source, and P3 cannot deploy to one. Closing
+either means reading the host itself — its binary, its source, or its official
+documentation — never inferring from what happens to be on disk. Q4 is the
+worked example: what was on disk showed two directories and suggested a choice;
+the binary showed there was no choice to make.
 
 **R14.1** No requirement in this document may be implemented on the basis of an
-unverified path. Q1–Q4 MUST be resolved against the hosts themselves — their
-CLIs, their source, or their official documentation — before the corresponding
-feature is built.
+unverified path. Q1–Q3, Q5 and Q6 MUST be resolved against the hosts themselves
+— their CLIs, their source, or their official documentation — before the
+corresponding feature is built.
 
 ---
 
@@ -549,7 +600,7 @@ feature is built.
 |---|---|---|
 | **P0** | This specification | Reviewed; no open contradictions |
 | **P1** | Domain model, pure reconciliation, typed error hierarchy (R12.7) | Every row of 10.2 unit-tested with no filesystem |
-| **P2** | Host matrix, host detection, visibility graph, annotations (7.5) | `skill list` and `skill doctor` correct on a real machine; Q4 closed |
+| **P2** | Host matrix, host detection, visibility graph, annotations (7.5) | `skill list` and `skill doctor` correct on a real machine; Q5 and Q6 closed |
 | **P3** | `skill deploy` / `skill remove`, ledger, manifest, adoption (R10.6) | Idempotent; every `block` state reproducible in a test |
 | **P4** | `skillwire_cli`: the `skillwire` executable and its `sw` alias | Self-hosting: this repo's own skills deploy through it |
 | **P5** | Adoption by `macss` and `inquiry` | Both consume the `skillwire` package; no forked deployment logic remains |

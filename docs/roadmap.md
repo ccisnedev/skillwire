@@ -8,8 +8,8 @@ stages, each with a mechanically verifiable exit criterion.
 
 ## P0 — Specification
 
-- [x] Host matrix verified against the hosts themselves, **except OpenCode's
-      global directory — see Q4**
+- [x] Host matrix verified against the hosts themselves, **except Antigravity
+      (Q5) and Codex at its installed version (Q6)**
 - [x] Cross-host visibility graph
 - [x] Deployment mechanism decided and recorded (ADR 0002)
 - [x] Reconciliation states enumerated
@@ -32,8 +32,10 @@ stages, each with a mechanically verifiable exit criterion.
 
 ## P2 — Hosts
 
-- [ ] **Q4 closed: which directory OpenCode actually reads.** On the critical
-      path — it blocks OpenCode at `global` scope
+- [ ] **Q5 closed: Antigravity's skill paths.** Never sourced; blocks Antigravity
+      at both scopes
+- [ ] **Q6 closed: Codex re-read at 0.146.0.** The recorded row came from
+      0.120.0; blocks Codex, and Q1 with it
 - [ ] Host matrix as a data file
 - [ ] Host detection
 - [ ] Visibility graph and its reporting, carried as plan annotations (§7.5)
