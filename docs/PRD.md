@@ -18,6 +18,13 @@
 > Q5; Codex's were read from a binary twenty-six minor versions old and are now
 > Q6. R6.4 generalised into the rule that made both visible: a matrix row
 > without provenance in 14.1 must refuse to resolve.
+>
+> Finally, 12.6 settles where the package sits. It depends on
+> `preview_executor` — the transport-neutral engine `modular_cli_sdk` is itself
+> built on — and never on the SDK, so the `Step` it builds is the same type a
+> consumer hands back (R12.8). The price of reaching past the SDK is that the
+> executor becomes reachable too, and R12.9 forbids touching it: the package
+> produces steps and never runs them.
 
 ---
 
@@ -503,6 +510,24 @@ destination without having been targeted.
   minimum a missing or omitted parameter (R12.2), `--scope=repo` outside a
   repository (R12.3), and an unverified path refused under R14.1. A consumer
   MUST NOT have to match on message text to decide what happened.
+
+### 12.6 Where the package sits
+
+- **R12.8** The `skillwire` package MUST depend on `preview_executor`, **not** on
+  `modular_cli_sdk`. It needs the vocabulary for stating a change before making
+  it — `Step`, `Preview`, `Outcome`, `StepContext` — and nothing above it. The
+  SDK re-exports those four from `preview_executor`, so the `Step` the package
+  builds is the same type a consumer's `Command.steps()` returns; a package of
+  its own would need an adapter, and an adapter is where preview and perform
+  come apart again.
+- **R12.9** The `skillwire` package MUST NOT use `PreviewExecutor`, though
+  depending on `preview_executor` puts it within reach. `modular_cli_sdk`
+  withholds that class from command authors on the grounds that a command able
+  to reach the executor could run steps with no plan rendered, no approval
+  taken, and no check that what happened is what was announced. The package is
+  in the same position and inherits the same prohibition: it **produces** steps
+  and never runs them. This is non-negotiable rule 3 at the layer below the
+  flag.
 
 ---
 

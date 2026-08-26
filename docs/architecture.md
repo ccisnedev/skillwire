@@ -8,8 +8,22 @@
 | `code/cli` | `skillwire_cli`, the canonical consumer. Mounts the `skill` module over the `skillwire` package and ships its own skills as assets |
 
 ```
-skillwire_cli  →  skillwire package
+skillwire_cli  →  skillwire package  →  preview_executor
+       ↓
+modular_cli_sdk  →  preview_executor
 ```
+
+The package depends on **`preview_executor`**, not on `modular_cli_sdk`. What it
+needs is the vocabulary for stating what a change would be before making it —
+`Step`, `Preview`, `Outcome`, `StepContext` — and that vocabulary lives one
+layer below the CLI framework, in a package with **no runtime dependencies of
+its own**. What it does not need is routing, module mounting, flag parsing or
+exit codes; those belong to the consumer, which is the thing that has flags.
+
+This works because `modular_cli_sdk` re-exports those four types from
+`preview_executor` rather than redeclaring them. A `Step` the package produces
+*is* the `Step` a consumer's `Command.steps()` returns. There is no adapter
+between them, and no version of this where the two drift apart.
 
 `skillwire_cli` depends on the `skillwire` package. The package never depends on
 `skillwire_cli`, and never on any other consumer. That direction is what makes
@@ -35,6 +49,7 @@ graph TD
 
     LIB["skillwire<br/><i>package</i>"]
     SDK["modular_cli_sdk"]
+    PX["preview_executor<br/><i>no runtime deps</i>"]
 
     subgraph hosts[AI hosts]
         CC["Claude Code"]
@@ -50,12 +65,17 @@ graph TD
     SW --> SDK
     MA --> SDK
     IN --> SDK
+    LIB --> PX
+    SDK --> PX
     LIB --> CC
     LIB --> CX
     LIB --> AG
     LIB --> OC
     LIB --> CP
 ```
+
+`preview_executor` is the join. Both arrows into it are the reason a `Step`
+built by the package is the same type a consumer's `Command` hands to the SDK.
 
 Each consumer carries its own skills, as assets of its own release. Left, the
 consumer; right, where its skills live inside that consumer's repository:

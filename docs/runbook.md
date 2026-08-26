@@ -188,7 +188,7 @@ as a fact breaches non-negotiable rule 5. Therefore:
 
 | ADR | Decision | Written at |
 |---|---|---|
-| `0005-where-the-sdk-sits.md` | The package depends on `preview_executor`; only `skillwire_cli` depends on `modular_cli_sdk` | Stage 1 |
+| `0005-where-the-sdk-sits.md` | The package depends on `preview_executor`; only the consumers depend on `modular_cli_sdk`. Settled in the PRD as R12.8/R12.9 — the ADR records it, it does not decide it | Stage 1 |
 | `0006-the-unit-tuple-order.md` | `(artifact, kind, host, scope, subagent?)` | Stage 3 |
 | `0007-the-content-hash-contract.md` | SHA-256, sorted POSIX paths, text normalisation | Stage 3 |
 | `0008-the-opencode-skills-directory.md` | Singular or plural, with evidence | Stage 16 |
@@ -516,38 +516,53 @@ forces now because deferring them is more expensive later.
       which is also what generated `code/skillwire/.dart_tool/package_config.json`
       (`"generator": "pub"`, `"generatorVersion": "3.11.5"`). 3.11.5 satisfies
       `^3.8.1`.
-- [ ] **D1 — where `modular_cli_sdk` sits. DECISION, recorded before any P1
-      code.** The evidence is contradictory. The mermaid graph under
-      "The package is shared, the CLI is one consumer among several" in
-      `docs/architecture.md` draws `SW --> SDK`, `MA --> SDK` and `IN --> SDK`
-      and gives the library **no** edge to the SDK, and the layer table says the
-      package "Knows nothing about any particular CLI". But R12.5 requires each
-      unit of PRD §10.1 to be emitted as one `Step`, and R12.6 forbids the
-      package defining a plan type of its own — so the package must reference
-      the `Step` type.
+- [ ] **~~D1 — where `modular_cli_sdk` sits.~~ Settled in the PRD by R12.8 and
+      R12.9; nothing to decide, only to record.** The package depends on
+      **`preview_executor`**; only `skillwire_cli`, `macss` and `inquiry` depend
+      on `modular_cli_sdk`.
 
-      **Decision: the package depends on `preview_executor` directly; only
-      `skillwire_cli` depends on `modular_cli_sdk`.** `Step`, `Preview`,
+      Verified 2026-08-26 against the packages themselves. `Step`, `Preview`,
       `Outcome`, `StepContext`, `Execution`, `Discrepancy` and `StepFailure` are
-      not defined in `modular_cli_sdk` at all — they come from
+      not declared in `modular_cli_sdk` at all: they come from
       `package:preview_executor` and are re-exported
-      (`modular_cli_sdk/lib/modular_cli_sdk.dart:34-42`; the interface itself at
-      `preview_executor-0.1.0/lib/src/step.dart:39-55`). `preview_executor`
-      0.1.0 declares `environment: sdk: ^3.8.1` and **zero runtime
-      dependencies**, and resolves from pub.dev as a hosted package
-      (`macss/code/cli/pubspec.lock:348-354`). Under this split the package
-      emits real `Step` objects (R12.5 satisfied), defines no plan type (R12.6
-      satisfied), and acquires no dependency on the CLI framework — so the
-      architecture graph stays literally true, because the edge the package
-      gains is to the engine, not to the SDK. The package also stays embeddable
-      by a consumer that is not a `modular_cli_sdk` CLI, which is the constraint
-      that "the package must not depend on any consumer" protects.
+      (`modular_cli_sdk/lib/modular_cli_sdk.dart:34-42`), so the `Step` the
+      package builds **is** the `Step` a consumer's `Command.steps()` returns —
+      `modular_cli_sdk/lib/src/command.dart:63` types that return as
+      `Future<List<Step>>` over the same import. No adapter, and no version of
+      this where the two drift apart. `preview_executor` 0.1.0 declares
+      `environment: sdk: ^3.8.1` and **zero runtime dependencies**, and resolves
+      from pub.dev as a hosted package
+      (`macss/code/cli/pubspec.lock:348-355`, sha256 `05afa012…`).
+
+      Under this split the package emits real `Step` objects (R12.5 satisfied),
+      defines no plan type (R12.6 satisfied), and gains no dependency on the CLI
+      framework — so `docs/architecture.md`'s graph becomes literally true
+      rather than aspirational, because the edge the package gains goes to the
+      engine, not to the SDK. It also stays embeddable by a consumer that is not
+      a `modular_cli_sdk` CLI, which is the constraint "the package must not
+      depend on any consumer" exists to protect.
+- [ ] **The cost of that split, and the rule that pays it (R12.9).** Depending
+      on `preview_executor` directly puts `PreviewExecutor` — the class that
+      *runs* steps — within the package's reach. `modular_cli_sdk` deliberately
+      withholds it from command authors and says why in its own library doc
+      (`modular_cli_sdk/lib/modular_cli_sdk.dart:21-27`): a command that could
+      reach the executor "could run steps with no plan shown, no approval taken,
+      and no check that what happened is what was announced". Only
+      `package:modular_cli_sdk/testing.dart` re-exports it
+      (`modular_cli_sdk/lib/testing.dart:40`).
+
+      The package inherits that prohibition. It **produces** steps and never
+      runs them — non-negotiable rule 3 at the layer below the flag. Pin it
+      mechanically rather than by discipline, in the same test that stage 15
+      uses for reconciliation purity:
+      `grep -rn "PreviewExecutor" code/skillwire/lib/` returns nothing.
 - [ ] Record D1 as `docs/adr/0005-where-the-sdk-sits.md`, following the
       numbering and never-delete convention of
-      `docs/adr/0001-record-architecture-decisions.md:18`. Amend
-      `docs/architecture.md`'s graph to add `LIB --> PE["preview_executor"]` and
-      `SDK --> PE` in the same commit, leaving the absence of a `LIB --> SDK`
-      edge intact — it becomes true rather than aspirational.
+      `docs/adr/0001-record-architecture-decisions.md:18`. Its Decision section
+      is R12.8 and R12.9; its Context is the verification above; its
+      Consequences are the two greps this stage and stage 15 install.
+      `docs/architecture.md` already carries the graph edges — `LIB --> PX` and
+      `SDK --> PX`, with no `LIB --> SDK` — so confirm rather than add them.
 - [ ] **D2 — the tuple order. DECISION.** PRD §10.1 and R11.2 fix the unit and
       ledger key as `(artifact, kind, host, scope, subagent?)`.
       `docs/adr/0003-the-name-skillwire.md:34-36` writes the resolver signature
@@ -714,7 +729,8 @@ Three contradictions are open, and all three are frozen by R15.1 the moment P1
 writes a type, because R15.1 makes the resolver signature and ledger key
 immutable from P1 onward.
 
-**Contradiction 1 — where `modular_cli_sdk` sits.** Settled at stage 1 as D1.
+**Contradiction 1 — where `modular_cli_sdk` sits.** Settled in the PRD by R12.8
+and R12.9, recorded at stage 1 as D1.
 Confirm `docs/adr/0005-where-the-sdk-sits.md` exists and that
 `docs/architecture.md`'s graph carries the `LIB --> PE` edge.
 
@@ -4329,8 +4345,8 @@ pre-upgrade clean.
 ## 14. Requirement traceability
 
 Every normative requirement id in the specification, and the stage that
-discharges it. PRD Draft 2 raised the count from 35 to **44**: R6.4, R6.5,
-R7.7-R7.9, R10.6, R11.5, R11.6, R12.7 and R14.2 are new, and four of the six
+discharges it. PRD Draft 2 raised the count from 35 to **46**: R6.4, R6.5,
+R7.7-R7.9, R10.6, R11.5, R11.6, R12.7-R12.9 and R14.2 are new, and four of the six
 gaps below closed as a result. **R12.0** is a normative naming rule with no phase row. Phase references point
 at the stage group that carries the phase.
 
@@ -4372,6 +4388,8 @@ at the stage group that carries the phase.
 | R12.5 | Stage 27 | `preview()` and `perform()` separate methods |
 | R12.6 | Stages 7, 30 | No plan type of the package's own; the SDK renders it |
 | R12.7 | Stage 6 | Typed error hierarchy, sealed root, mapped onto SDK exit codes |
+| R12.8 | Stages 1, 4 | The package depends on `preview_executor`, not the SDK; the `Step` type is shared, not adapted |
+| R12.9 | Stages 1, 15 | The package never uses `PreviewExecutor`; pinned by grep, not by discipline |
 | R13.1 | Stage 43 | `core` holds only cross-domain skills; stage 62 records why macss's five are `lifecycle` |
 | R13.2 | Stages 43, 62 | Per-consumer name tests plus the `uniq -d` gate; **cross-repository enforcement is not automatable today** |
 | R13.3 | Stages 23, 40, 41–43, 53, 62 | `metadata` map; no `skill.yaml` |
