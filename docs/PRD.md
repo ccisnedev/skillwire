@@ -1,28 +1,66 @@
 # Skillwire — Product Requirements Document
 
-**Status:** Draft 1 — specification complete, implementation not started
-**Date:** 2026-08-23
+**Status:** Draft 2 — specification complete, implementation not started
+**Date:** 2026-08-26
 **Owner:** ccisnedev
+
+> **Draft 2** closes the six gaps the runbook's traceability pass found in
+> Draft 1: plan annotations (7.5) give R7.6 a carrier it did not have; R10.6
+> settles what `deploy --force` does to a state 6 unit; R11.3 names its two
+> timestamps; R11.5 makes the ledger one shared file and says where; and R12.7
+> gives the typed error hierarchy a requirement id. See
+> [`docs/runbook.md`](runbook.md) §14.
+>
+> It then re-read the host matrix against the hosts actually installed. OpenCode
+> reads **both** spellings of its own directory (6.4) — closing Q4, adding R6.5,
+> and vindicating `macss` and `inquiry` alike, since neither was wrong.
+> Antigravity's two paths turned out to have no provenance at all — and, once
+> read, to be **wrong**: its global root is `~/.gemini/config/`, not
+> `~/.gemini/antigravity/`, and its workspace root is `.agents/` with three
+> aliases (6.5). That moves Antigravity into the neutral namespace, making it
+> four hosts sharing `.agents/skills/` rather than three. Codex's row was read
+> from a binary twenty-six minor versions old; re-reading it at 0.146.0 found
+> three repo locations rather than one, a user-scope `~/.agents/skills` the table
+> never listed, and a machine-wide `/etc/codex/skills` this document does not
+> model (6.6). R6.4 generalised into the rule that made all of this visible: a
+> matrix row without provenance in 14.1 must refuse to resolve. **Every row now
+> carries it, and no open question blocks a shipped phase.**
+>
+> 13.1 reproduces the Agent Skills frontmatter contract, read from
+> agentskills.io on 2026-08-26. It confirms R13.3's premise — `metadata` really
+> is "a map from string keys to string values" — and supplies the citation R7.5
+> had been arguing without: `name` must match the parent directory name. R13.6
+> fixes the vocabulary at two keys, `version` and `skillwire-origin`; R13.7 puts
+> `license` back where the specification put it; R13.9 makes `compatibility`
+> reported and never parsed.
+>
+> Finally, 12.6 settles where the package sits. It depends on
+> `preview_executor` — the transport-neutral engine `modular_cli_sdk` is itself
+> built on — and never on the SDK, so the `Step` it builds is the same type a
+> consumer hands back (R12.8). The price of reaching past the SDK is that the
+> executor becomes reachable too, and R12.9 forbids touching it: the package
+> produces steps and never runs them.
 
 ---
 
 ## 1. Purpose
 
-Skillwire is the layer that lets an AI coding host execute capabilities it was
-never trained on.
+The `skillwire` package is the layer that lets an AI coding host execute
+capabilities it was never trained on.
 
 An Agent Skill is a portable, standardised artifact: a folder with a `SKILL.md`.
 A subagent is not. Hooks are less standardised still. Every host reads them from
 a different directory, at a different scope, and — for everything except skills —
 in a different file format.
 
-Skillwire absorbs those differences. You define a skill or a subagent **once**,
-and the package resolves where it must land, in which shape, for each host.
+The `skillwire` package absorbs those differences. You define a skill or a
+subagent **once**, and the package resolves where it must land, in which shape,
+for each host.
 
 > **On the name.** In Shadowrun, a *skillsoft* is a recorded skill and a
 > *skillwire* is the neuro-muscular system that lets a body run softs it never
 > learned. The wire is infrastructure; the softs are payload, and they come in
-> kinds. This package is the wire.
+> kinds. The `skillwire` package is the wire.
 
 ---
 
@@ -45,7 +83,8 @@ between releases, and is currently re-derived by hand every time.
 ## 3. Glossary
 
 Terms are used in this document with exactly these meanings, and nowhere with
-any other meaning.
+any other meaning. The three things the word `skillwire` names are separated in
+12.1 and governed by R12.0.
 
 | Term | Meaning |
 |---|---|
@@ -62,7 +101,12 @@ any other meaning.
 | **Reconciliation** | Making a host's directories match a desired set of materialised artifacts |
 | **Ledger** | Machine-local record of what *is* deployed |
 | **Manifest** | Repository-level, committed declaration of what a repo *wants* deployed |
-| **Consumer** | A CLI that embeds the Skillwire package: `skillwire`, `macss`, `inquiry` |
+| **Consumer** | A CLI that embeds the `skillwire` package: `skillwire_cli`, `macss`, `inquiry` |
+| **Acting consumer** | The consumer executing the operation at hand. Ownership in the ledger, and every rule about what may be destroyed, are relative to it — never to the `skillwire` package, which all consumers share |
+| **Detected host** | A host whose directories are present on this machine, whether or not it was named with `--host` |
+| **Unit** | One tuple `(artifact, kind, host, scope, subagent?)`: the atom of reconciliation, defined in 10.1 |
+| **Source** | Where an artifact comes from before materialisation: a local path or a git reference |
+| **Drift** | A destination whose content no longer matches what the ledger records for it |
 
 ---
 
@@ -83,12 +127,12 @@ any other meaning.
 
 | Excluded | Reason |
 |---|---|
-| MCP server management | Project philosophy: a subagent drives a CLI, not an MCP. A CLI is a versioned artifact with a stable contract and no process lifecycle; a subagent driving a Skillwire-family CLI also inherits its `--plan`/`--apply` guard rails |
-| A skill catalogue, search, or marketplace UI | `npx skills` covers discovery. Skillwire does not compete with it |
+| MCP server management | Project philosophy: a subagent drives a CLI, not an MCP. A CLI is a versioned artifact with a stable contract and no process lifecycle; a subagent driving a consumer CLI also inherits its `--plan`/`--apply` guard rails |
+| A skill catalogue, search, or marketplace UI | `npx skills` covers discovery. The `skillwire` package does not compete with it. **Contested — see issue #1** |
 | Support for dozens of hosts | Five hosts, in a data table. Adding a host must be data, not code |
 | Exotic source resolution (GitLab, SSH, archives, download URLs) | Local path and git are sufficient |
 | A "dev mode" that links to a working copy | Solved one layer down: `modular_cli_sdk` CLIs run from source with `dart run`, so the working copy *is* the asset |
-| Runtime skill generation | The package deploys what it is given. Generation belongs to the consumer CLI, upstream of the seam in section 8 |
+| Runtime skill generation | The `skillwire` package deploys what it is given. Generation belongs to the consumer, upstream of the seam in section 8 |
 
 ---
 
@@ -98,10 +142,10 @@ any other meaning.
 |---|---|---|
 | G1 | One definition, many hosts | A skill authored once deploys to all five hosts with no per-host source edits |
 | G2 | Nothing implicit | No default host, no default scope, no default artifact set |
-| G3 | Nothing destroyed | No operation ever removes an artifact that Skillwire did not deploy |
+| G3 | Nothing destroyed | No operation ever removes an artifact that the acting consumer did not deploy |
 | G4 | Reproducible | Two machines given the same manifest reach the same deployed state |
 | G5 | Honest about the ecosystem | Cross-host visibility and per-host limitations are reported, never hidden |
-| G6 | Shared by consumers | `macss` and `inquiry` deploy their own skills through the same package with no forked logic |
+| G6 | Shared by consumers | `macss` and `inquiry` deploy their own skills through the same `skillwire` package with no forked logic |
 
 ---
 
@@ -112,20 +156,33 @@ any other meaning.
 | Host | `global` | `repo` |
 |---|---|---|
 | Claude Code | `~/.claude/skills/` | `.claude/skills/` |
-| Codex | `$CODEX_HOME/skills/` — default `~/.codex/skills/` | `.agents/skills/` |
-| Antigravity | `~/.gemini/antigravity/skills/` | `.agent/skills/` |
-| OpenCode | `~/.config/opencode/skills/` · `~/.claude/skills/` · `~/.agents/skills/` | `.opencode/skills/` · `.claude/skills/` · `.agents/skills/` |
+| Codex | `$CODEX_HOME/skills/` — default `~/.codex/skills/` · `~/.agents/skills/` | `.agents/skills/` — at the working directory, its parents, **and** the repository root, see 6.6 |
+| Antigravity | `~/.gemini/config/skills/` | `.agents/skills/` — aliases `.agent/` · `_agents/` · `_agent/`, see 6.5 |
+| OpenCode | `~/.config/opencode/skill/` **·** `~/.config/opencode/skills/` · `~/.claude/skills/` · `~/.agents/skills/` | `.opencode/skill/` **·** `.opencode/skills/` · `.claude/skills/` · `.agents/skills/` |
 | GitHub Copilot | `~/.copilot/skills/` · `~/.agents/skills/` | `.github/skills/` · `.claude/skills/` · `.agents/skills/` |
+
+OpenCode's own directory exists in **both** spellings and both are read; see
+6.4. Every other host names one spelling only.
 
 **Normative requirements**
 
 - **R6.1** Codex's global path MUST be resolved from the `CODEX_HOME` environment
   variable, falling back to `~/.codex` only when it is unset. Hardcoding
-  `~/.codex` is non-conforming.
-- **R6.2** Where a host lists several directories, Skillwire MUST deploy to
-  exactly one of them, and that choice MUST be recorded in the ledger.
+  `~/.codex` is non-conforming. Sourced from the binary at 0.146.0, which states
+  it in the first person: "If you do not have a preference, I will place it in
+  `$CODEX_HOME/skills` (or `~/.codex/skills` when `CODEX_HOME` is unset) so Codex
+  can discover it automatically." **OpenAI's published documentation does not
+  mention `CODEX_HOME` at all**, so this requirement rests on the binary alone —
+  which is a reason to re-read it on each release (R14.2), not a reason to drop
+  it.
+- **R6.2** Where a host lists several directories, the `skillwire` package MUST
+  resolve to exactly one of them, and that choice MUST be recorded in the ledger.
 - **R6.3** The host matrix MUST live in a data file, not in code. Adding a host
   is a data change.
+- **R6.4** Every path in this matrix MUST carry provenance in 14.1. A row without
+  it MUST be marked unverified, and resolving it MUST raise rather than return a
+  path (R14.1). Every row currently carries provenance; the rule stands for the
+  next host added, and for the next release that moves a path (R14.2).
 
 ### 6.2 Subagent paths
 
@@ -140,19 +197,97 @@ This table is **incomplete and blocks subagent support only**. Skills are unaffe
 
 ### 6.3 The neutral namespace
 
-`.agents/skills/` and `~/.agents/skills/` are read by Codex, OpenCode and
-Copilot. `~/.agents/plugins/` is used by Codex for its plugin marketplace.
+`.agents/skills/` is read by **four** of the five hosts — Codex, OpenCode,
+Copilot and Antigravity — and `~/.agents/skills/` by three of them; Antigravity
+keeps its global customisations under `~/.gemini/config/` instead.
+`~/.agents/plugins/` is used by Codex for its plugin marketplace.
 
-Deploying into `.agents/` reaches three hosts with one copy, at the cost of
-losing per-host variation, since all three read the same bytes. Skillwire MUST
-expose this as an explicit destination, never as a hidden optimisation.
+Deploying into `.agents/` reaches four hosts with one copy, at the cost of
+losing per-host variation, since all four read the same bytes. The `skillwire`
+package MUST expose this as an explicit destination, never as a hidden optimisation.
+
+### 6.4 OpenCode reads both spellings
+
+OpenCode 1.17.10 resolves its **own** skill directories with a brace glob and
+the external namespaces with a plain one. Both constants are recoverable from
+the binary:
+
+```
+pa=".claude"   la=".agents"
+Rt="skills/**/SKILL.md"           ← .claude and .agents: plural only
+fa="{skill,skills}/**/SKILL.md"   ← OpenCode's own: either spelling
+```
+
+Its own help table documents the same thing in its own notation —
+`` `~/.config/opencode/skill(s)/<name>/SKILL.md` `` and
+`` `.opencode/skill(s)/<name>/SKILL.md` ``.
+
+So `~/.config/opencode/skill/` and `~/.config/opencode/skills/` are not
+competing candidates to choose between: they are **one destination with two
+spellings, both live at once**. Neither `macss`, which writes the singular, nor
+`inquiry`, which writes the plural, was wrong.
+
+- **R6.5** The two spellings of an OpenCode directory MUST be treated as a
+  single destination for the one-path invariant (7.3). Deploying the same
+  artifact into both is the collision R7.5 exists to prevent, not two
+  deployments — the brace glob makes both visible under the same invocation
+  name.
 
 ---
+
+### 6.5 Antigravity accepts four spellings of its workspace root
+
+Antigravity discovers workspace customisations under `.agents/`, `.agent/`,
+`_agents/` or `_agent/`, and **walks up from the working directory to the
+repository root** looking for them rather than checking the root alone. Global
+customisations live under `~/.gemini/config/`, not under the CLI's own
+`~/.gemini/antigravity-cli/` — that directory holds the installation, whose
+`builtin/skills/` are mounted by name rather than discovered.
+
+- **R6.6** `.agents/` is the destination the package resolves for Antigravity at
+  `repo` scope (R6.2), because it is the spelling the other three hosts also
+  read; the aliases are recognised when **observing** state, so an artifact
+  already sitting in `.agent/skills/` is seen rather than deployed over.
+- **R6.7** A consumer that wants Antigravity to hold a variant the other three
+  hosts do not see MUST be able to name one of the aliases explicitly.
+  `.agent/skills/` is the only repo-scope directory in the whole matrix that
+  exactly one host reads, which makes it the sole escape from the neutral
+  namespace's all-or-nothing bargain. Hiding it would remove a capability the
+  ecosystem actually offers.
+
+### 6.6 Two hosts walk up, and one has a scope this document does not model
+
+**Codex searches three repo-scope locations, not one**: `$CWD/.agents/skills`,
+`$CWD/../.agents/skills` and `$REPO_ROOT/.agents/skills`. Antigravity does the
+same thing with its own root (6.5), walking from the working directory to the
+repository root. Two of five hosts therefore find a `.agents/` that is neither
+at the repository root nor in the current directory.
+
+- **R6.8** `repo` scope resolves to the **repository root**, and to nothing else.
+  Deploying into an intermediate directory would make what a host loads depend on
+  where the user happened to be standing, which defeats G4 — two machines given
+  the same manifest must reach the same deployed state.
+- **R6.9** Observation MUST still look at the intermediate directories that
+  R6.8 refuses to write to. An artifact in a subdirectory's `.agents/skills/` is
+  visible to Codex and Antigravity, so it participates in the one-path invariant
+  (7.3) and must be seen — a host that loads two same-named skills is the
+  collision R7.5 exists to prevent, and the package cannot report it without
+  looking where the host looks.
+
+**Codex also reads `/etc/codex/skills`**, a machine-wide location that is neither
+`global` (user-level, per the glossary) nor `repo`. It is out of scope: a
+third scope would appear in the unit tuple (10.1), the ledger key (R11.2) and
+every route's parameters, and nothing in this project's use needs it.
+
+- **R6.10** `/etc/codex/skills` MUST NOT be a destination. It MAY be read when
+  detecting collisions, and if it is, the fact that it was read MUST be
+  reported — a `block` whose cause the user cannot see is worse than no check.
 
 ## 7. Cross-host visibility
 
 Some hosts read other hosts' directories. This is a property of the ecosystem,
-not something Skillwire can change, and it has consequences a user cannot infer.
+not something the `skillwire` package can change, and it has consequences a user
+cannot infer.
 
 ### 7.1 The graph
 
@@ -161,7 +296,10 @@ not something Skillwire can change, and it has consequences a user cannot infer.
 | OpenCode ← `~/.claude/skills/` | global | OpenCode documentation |
 | OpenCode ← `.claude/skills/` | repo | OpenCode documentation |
 | OpenCode ← `~/.agents/skills/` · `.agents/skills/` | both | OpenCode documentation |
-| Codex ← `.agents/skills/` | repo | Codex binary 0.120.0 |
+| Codex ← `.agents/skills/` at the working directory, its parents and the repo root | repo | OpenAI documentation |
+| Codex ← `~/.agents/skills/` | global | OpenAI documentation |
+| Antigravity ← `.agents/skills/` | repo | Antigravity `agy-customizations` skill, `docs/skills.md` and `SKILL.md` |
+| Antigravity ← `.agent/` · `_agents/` · `_agent/` | repo | Same source; the four are aliases of one root |
 | Copilot ← `.claude/skills/` | **repo only** | GitHub documentation |
 | Copilot ← `~/.agents/skills/` · `.agents/skills/` | both | GitHub documentation |
 
@@ -186,10 +324,12 @@ Copilot←Claude edge would produce false warnings and is non-conforming.
 
 **R7.5** A deployment that would violate this invariant MUST be planned as
 `block`. Renaming an artifact to disambiguate — for example a `_opencode`
-suffix — is explicitly rejected: the Agent Skills specification requires `name`
-to equal the directory name, so a suffix creates a *second artifact* with a
-different invocation command, and both remain visible to the host. That is the
-collision the invariant exists to prevent.
+suffix — is explicitly rejected. The Agent Skills specification requires `name`
+to **match the parent directory name** (13.1), so a suffix creates a *second
+artifact* with a different invocation command, and both remain visible to the
+host. That is the collision the invariant exists to prevent. Note also that the
+specification forbids consecutive hyphens, so a `--opencode` suffix is not
+merely discouraged but invalid.
 
 ### 7.4 An irreducible limitation
 
@@ -198,10 +338,35 @@ a same-named skill**, because OpenCode reads `~/.claude/skills/` and cannot be
 prevented from doing so.
 
 At `repo` scope this is avoidable: each host has a private directory, and
-Skillwire can deploy to `.opencode/skills/` instead of `.claude/skills/`.
+the `skillwire` package can resolve to `.opencode/skills/` instead of
+`.claude/skills/`.
 
-**R7.6** This asymmetry MUST be stated by the tool when relevant, never silently
-worked around.
+**R7.6** The acting consumer MUST state this asymmetry in the plan when it is
+relevant, never silently work around it. It is carried as an annotation — see
+7.5.
+
+### 7.5 Plan annotations
+
+Sections 7.2 and 7.4 both require the plan to state something that is *not* a
+problem with the unit. The deployment is correct; the ecosystem around it has a
+consequence the user cannot infer. Section 10.2 has no room for this: every unit
+there resolves to exactly one state, and a unit can be `create` **and**
+ambiguous at the same time.
+
+An **annotation** is therefore a separate axis. It attaches to a unit, states a
+consequence, and changes nothing about what will happen.
+
+- **R7.7** An annotation MUST NOT change a unit's verb and MUST NOT cause
+  `--apply` to refuse. A plan consisting entirely of annotated `create` units is
+  a plan that applies cleanly.
+- **R7.8** The annotation set MUST include at least: cross-host visibility on
+  deployment (R7.2), cross-host visibility on removal (R7.3), and the global
+  asymmetry of 7.4 (R7.6). The set is open; a later ecosystem fact that a user
+  cannot infer becomes another annotation rather than another state.
+- **R7.9** Annotations MUST be carried in the `detail` of the unit's `Preview`
+  (R12.5) and surfaced in the `also visible from` column of `skill list` (12.2).
+  R7.4 applies to every annotation: only hosts actually detected on the machine
+  may be named.
 
 ---
 
@@ -228,15 +393,15 @@ one engine.
 
 ## 9. Deployment mechanism: copy
 
-**R9.1** Skillwire deploys by **copying** the materialised directory into each
-host's directory, independently per host.
+**R9.1** The `skillwire` package deploys by **copying** the materialised
+directory into each host's directory, independently per host.
 
 Two alternatives were considered and rejected; the rationale is recorded in
 ADR 0002. In summary:
 
 | Model | Rejected because |
 |---|---|
-| Link directly to the consumer CLI's asset directory | That directory is replaced when the CLI is upgraded. An upgrade would mutate a host's behaviour with no deployment having occurred |
+| Link directly to the consumer's asset directory | That directory is replaced when the CLI is upgraded. An upgrade would mutate a host's behaviour with no deployment having occurred |
 | One canonical copy, links from each host | Forbids per-host variation. Subagents *require* per-host transformation, so this model cannot support them |
 
 Copy carries one cost, accepted deliberately: **a copy has no intrinsic
@@ -263,11 +428,11 @@ Every unit resolves to exactly one of these. The verb is what appears in the pla
 | # | State found at destination | Verb | Behaviour |
 |---|---|---|---|
 | 1 | Nothing | `create` | Deploy |
-| 2 | Ours, content hash matches | `keep` | No action |
-| 3 | Ours, content hash differs | `replace` | Deploy; plan shows `old → new` |
-| 4 | Ours, but modified at the destination | `block` | Local edits would be lost |
-| 5 | Owned by a different consumer CLI | `block` | Plan names the owning CLI |
-| 6 | Present but absent from the ledger | `block` | Not managed by this consumer |
+| 2 | Deployed by the acting consumer, content hash matches | `keep` | No action |
+| 3 | Deployed by the acting consumer, content hash differs | `replace` | Deploy; plan shows `old → new` |
+| 4 | Deployed by the acting consumer, modified at the destination | `block` | Local edits would be lost |
+| 5 | Deployed by a different consumer | `block` | Plan names the owning consumer |
+| 6 | Present but absent from the ledger | `block` | No consumer deployed it; `--force` may adopt it — R10.6 |
 
 - **R10.1** A plan containing any `block` MUST cause `--apply` to refuse, unless
   `--force` is passed.
@@ -279,6 +444,21 @@ Every unit resolves to exactly one of these. The verb is what appears in the pla
   after. This makes every row of this table unit-testable with no disk.
 - **R10.5** Reconciliation MUST be idempotent: applying the same plan twice
   produces `keep` for every unit on the second run.
+- **R10.6** `deploy` under `--force` MUST **adopt** a state 6 unit whose
+  destination content hash equals the materialised artifact's: the ledger gains
+  an entry naming the acting consumer, and **nothing is written to the
+  destination**. The plan verb is `adopt`. Where the hashes differ the unit
+  stays `block`, with or without `--force`. Adoption is the only circumstance in
+  which an artifact no consumer deployed becomes ledgered, and it is the
+  mechanism by which a machine carrying pre-package deployments migrates without
+  a single byte being destroyed.
+
+Adoption exists because of a fact about the world, not a convenience: `macss`
+and `inquiry` deployed skills before any ledger existed, so on every machine
+that ran them the first reconciliation finds state 6 everywhere. Rule 1 forbids
+overwriting those directories and R10.3 forbids removing them; without R10.6 the
+only remaining route would be a manual deletion, which is rule 1 violated by the
+user's own hand on the tool's advice.
 
 ---
 
@@ -290,22 +470,40 @@ Two files, two different questions, following the `package.json` /
 | | Manifest | Ledger |
 |---|---|---|
 | Answers | what this repo *wants* deployed | what *is* deployed on this machine |
-| Location | repository root | user state directory |
+| Location | repository root | `$SKILLWIRE_HOME/ledger.json`, default `~/.skillwire/ledger.json` — R11.5 |
 | Committed | **yes** | no |
-| Written by | a human, or a Skillwire command | Skillwire only |
+| Written by | a human, or a consumer CLI | a consumer CLI only |
+| How many | one per repository | **one per machine, shared by every consumer** — R11.5 |
 
-- **R11.1** Skillwire MUST NOT read or write `~/.agents/.skill-lock.json`. That
-  file belongs to `npx skills`, whose implementation **deletes it outright** when
-  it encounters a version lower than its current one. Sharing it would mean
+- **R11.1** The `skillwire` package MUST NOT read or write
+  `~/.agents/.skill-lock.json`. That file belongs to `npx skills`, whose
+  implementation **deletes it outright** when it encounters a version lower than
+  its current one. Sharing it would mean
   losing the ledger on an unrelated tool's upgrade.
 - **R11.2** The ledger key MUST be the full tuple of 10.1. `npx skills` keys by
-  skill name alone and records no per-host state; that shape cannot express
-  Skillwire's model.
+  skill name alone and records no per-host state; that shape cannot express the
+  model of the `skillwire` package.
 - **R11.3** The ledger MUST record, per unit: source type, source reference,
-  resolved destination path, content hash, owning consumer CLI, artifact version,
-  and timestamps.
+  resolved destination path, content hash, owning consumer, artifact version,
+  and two timestamps — **`created`**, when the acting consumer first deployed or
+  adopted the unit, and **`updated`**, when it last wrote to the destination.
+  `keep` advances neither; `adopt` (R10.6) sets both to the same instant, since
+  no write to the destination occurred.
 - **R11.4** Paths stored in the manifest MUST be relative and use `/` separators,
   so a manifest is portable across machines and operating systems.
+- **R11.5** There MUST be exactly **one ledger per machine**, shared by every
+  consumer, at `$SKILLWIRE_HOME/ledger.json` — falling back to
+  `~/.skillwire/ledger.json` only when `SKILLWIRE_HOME` is unset, the same
+  resolution rule R6.1 applies to `CODEX_HOME`. A ledger per consumer is
+  non-conforming: state 5 asks *which other consumer owns this*, and a consumer
+  that can only read its own ledger cannot answer it without reading files it
+  has no contract with — and cannot answer it at all for a consumer it has never
+  heard of.
+- **R11.6** The ledger MUST carry a schema version, and every write MUST be
+  atomic: serialise to a temporary file in the same directory, then rename over
+  the target. Three CLIs share this file, so a write interrupted midway would
+  leave the other two unable to tell what they own — which is rule 1 lost to a
+  power cut.
 
 ---
 
@@ -313,13 +511,19 @@ Two files, two different questions, following the `package.json` /
 
 ### 12.1 Identity
 
-| | Value |
-|---|---|
-| Dart package, library | `skillwire` |
-| Dart package, CLI | `skillwire_cli` |
-| Executable | `skillwire` |
-| Alias | `sw` |
-| Module mounted in consumers | `skill`, singular |
+| | Value | Written in prose as |
+|---|---|---|
+| Dart package, library | `skillwire` | the `skillwire` package |
+| Dart package, CLI | `skillwire_cli` | `skillwire_cli` |
+| Executable | `skillwire` | the `skillwire` executable |
+| Alias | `sw` | the `sw` alias |
+| Module mounted in consumers | `skill`, singular | the `skill` module |
+
+**R12.0** One name identifies one thing. The word `skillwire` identifies three,
+so every mention in prose MUST carry the qualifier in the third column; a bare
+`skillwire` in prose is non-conforming. *Skillwire* capitalised names the
+project and MUST NOT be the subject of a requirement — a requirement names the
+`skillwire` package, `skillwire_cli`, or the consumer. Recorded in ADR 0004.
 
 **R12.1** The module is named `skill`, singular, in every consumer. `macss`
 already ships `skill list|deploy|clean` for its lifecycle skills; those routes
@@ -361,17 +565,45 @@ destination without having been targeted.
 - **R12.3** `--scope=repo` outside a repository MUST fail explicitly. It MUST NOT
   fall back to `global`.
 - **R12.4** Every Command MUST require `--plan` or `--apply`. `modular_cli_sdk`
-  enforces this and Skillwire MUST NOT bypass it.
+  enforces this, and neither the `skillwire` package nor any consumer may bypass
+  it.
 
 ### 12.4 Steps
 
 - **R12.5** Each unit of 10.1 is emitted as one `Step`. `preview()` returns the
-  verb of 10.2 and carries the visibility notice of section 7 in its detail;
+  verb of 10.2 and carries the unit's annotations (7.5) in its detail;
   `perform()` does the work. The two are separate methods, never one method
   behind a dry-run flag — a flag threaded through the work leaves nothing holding
   the switched-off pass and the real one to the same behaviour.
-- **R12.6** Skillwire MUST NOT define a plan type of its own. The plan is the
-  ordered list of Steps, and `modular_cli_sdk` renders and approves it.
+- **R12.6** The `skillwire` package MUST NOT define a plan type of its own. The
+  plan is the ordered list of Steps, and `modular_cli_sdk` renders and approves it.
+
+### 12.5 Errors
+
+- **R12.7** The `skillwire` package MUST define a typed error hierarchy rooted in
+  a single sealed type, which the consumer maps onto `modular_cli_sdk`'s exit
+  codes. Every condition a caller must distinguish gets its own type — at
+  minimum a missing or omitted parameter (R12.2), `--scope=repo` outside a
+  repository (R12.3), and an unverified path refused under R14.1. A consumer
+  MUST NOT have to match on message text to decide what happened.
+
+### 12.6 Where the package sits
+
+- **R12.8** The `skillwire` package MUST depend on `preview_executor`, **not** on
+  `modular_cli_sdk`. It needs the vocabulary for stating a change before making
+  it — `Step`, `Preview`, `Outcome`, `StepContext` — and nothing above it. The
+  SDK re-exports those four from `preview_executor`, so the `Step` the package
+  builds is the same type a consumer's `Command.steps()` returns; a package of
+  its own would need an adapter, and an adapter is where preview and perform
+  come apart again.
+- **R12.9** The `skillwire` package MUST NOT use `PreviewExecutor`, though
+  depending on `preview_executor` puts it within reach. `modular_cli_sdk`
+  withholds that class from command authors on the grounds that a command able
+  to reach the executor could run steps with no plan rendered, no approval
+  taken, and no check that what happened is what was announced. The package is
+  in the same position and inherits the same prohibition: it **produces** steps
+  and never runs them. This is non-negotiable rule 3 at the layer below the
+  flag.
 
 ---
 
@@ -394,17 +626,57 @@ code/cli/assets/skills/modules/
   domains belongs in `core`. This is what makes "what do I deploy here?"
   answerable: `core`, plus the domains in play.
 - **R13.2** Artifact names MUST be globally unique across all modules and all
-  consumer CLIs. A module is source-tree organisation only; deployment is flat.
+  consumers. A module is source-tree organisation only; deployment is flat.
 - **R13.3** Version and provenance live in the `metadata` map of the `SKILL.md`
-  frontmatter, which the specification defines as a string→string map. A separate
-  `skill.yaml` is prohibited: it would create a second source of truth for the
-  same fact. `CHANGELOG.md` is permitted, as the specification does not cover it.
-- **R13.4** Every consumer CLI holds its own skills under its own
+  frontmatter, which the specification defines as "a map from string keys to
+  string values". A separate `skill.yaml` is prohibited: it would create a second
+  source of truth for the same fact. `CHANGELOG.md` is permitted, as the
+  specification does not cover it.
+
+- **R13.4** Every consumer holds its own skills under its own
   `assets/skills/modules/`. There is no shared skill directory across consumers,
   and no build step copying skills between layers.
 - **R13.5** Conforming to `SKILL.md` is sufficient compatibility with the wider
   ecosystem. Discoverability by any particular third-party installer is a
   courtesy, never a requirement, and MUST NOT constrain this layout.
+
+### 13.1 The frontmatter contract
+
+The Agent Skills specification defines six frontmatter fields, two of them
+required. It is reproduced here because every rule below depends on it, and
+because 14.1 dates it — a specification is a fact about the world like any other.
+
+| Field | Required | Constraint |
+|---|---|---|
+| `name` | **Yes** | 1–64 characters; lowercase alphanumerics and hyphens; no leading, trailing or consecutive hyphen; **must match the parent directory name** |
+| `description` | **Yes** | 1–1024 characters, non-empty |
+| `license` | No | A licence name, or a reference to a bundled licence file |
+| `compatibility` | No | ≤500 characters. Intended product, system packages, network access |
+| `metadata` | No | A map from string keys to string values |
+| `allowed-tools` | No | Space-separated pre-approved tools. **Experimental** |
+
+- **R13.6** The `metadata` keys the `skillwire` package reads are exactly two:
+  **`version`**, a SemVer string, and **`skillwire-origin`**, the consumer that
+  transports the skill. `version` is unprefixed because it is the key the
+  specification's own example uses and its meaning is universal — a catalogue
+  reading `metadata.version` gets the right answer. `skillwire-origin` is
+  prefixed because "which consumer transports this" is this project's semantics,
+  and the specification recommends "making your key names reasonably unique to
+  avoid accidental conflicts" for exactly that case.
+- **R13.7** `license` MUST be the top-level field, never a `metadata` key. The
+  specification gives it its own field, and duplicating it into `metadata` would
+  recreate the two-sources-of-truth problem R13.3 exists to prevent.
+- **R13.8** `skillwire-origin` is **not** ownership. Anyone can write
+  `skillwire-origin: macss` into a file by hand. It is a courtesy that lets a
+  state 6 `block` say who *appears* to have put a directory there instead of only
+  that nobody recorded it. Ownership is the ledger and nothing else — R11.2, and
+  non-negotiable rule 1.
+- **R13.9** `skill validate` MUST validate `compatibility` when present (≤500
+  characters) and MUST surface its text as a plan annotation (7.5) when the
+  deployment targets a host the text does not name. It MUST NOT parse it: the
+  specification defines it as prose, and reading structure into prose would
+  invent a grammar nobody wrote. The reader decides; the tool only makes sure the
+  declaration is not invisible at the moment it matters (G5).
 
 ---
 
@@ -412,19 +684,41 @@ code/cli/assets/skills/modules/
 
 This section exists so that no reader mistakes an assumption for a fact.
 
-### 14.1 Verified during this design cycle
+### 14.1 Verified
 
-| Fact | How |
-|---|---|
-| Codex skill paths: `CODEX_HOME/skills`, `~/.codex/skills`, `.agents/skills` | String extraction from `codex.exe` 0.120.0 |
-| Codex watches skill directories for changes | `skills_watcher` symbol in the same binary |
-| Copilot skill paths, and that `~/.claude/skills` is not among the personal ones | GitHub official documentation |
-| OpenCode reads Claude's directories at both scopes | OpenCode official documentation |
-| `npx skills` installs a whole module directory from a URL | Executed against a public repository with a nested layout |
-| `npx skills` keeps two lock files and emits install telemetry | Source files `skill-lock.ts`, `local-lock.ts`, `telemetry.ts` |
-| Windows junctions require no elevation | Executed locally |
+Every row carries the artifact it was read from and the date it was read. A row
+without a date is a claim about a version nobody recorded, which is how a
+verified fact quietly becomes a stale one.
 
-### 14.2 Open — none of these block skills
+| Fact | How | Read |
+|---|---|---|
+| Codex global paths: `$CODEX_HOME/skills`, `~/.codex/skills` | String extraction from `codex.exe` **0.146.0** — the binary states the fallback in prose. Absent from OpenAI's documentation, see R6.1 | 2026-08-26 |
+| **Codex repo paths: `$CWD/.agents/skills`, `$CWD/../.agents/skills`, `$REPO_ROOT/.agents/skills`; user path `$HOME/.agents/skills`; system path `/etc/codex/skills`** | OpenAI documentation, learn.chatgpt.com/docs/build-skills | 2026-08-26 |
+| **Codex reads `.agents/skills` exclusively — not `.claude/skills`, not `.cursor/skills`** | Same source, stated explicitly | 2026-08-26 |
+| Codex watches skill directories for changes | `skills_watcher` symbol still present in `codex.exe` **0.146.0** | 2026-08-26 |
+| Copilot skill paths, and that `~/.claude/skills` is not among the personal ones | GitHub official documentation | 2026-08-23 |
+| OpenCode reads Claude's and `.agents`' directories, plural spelling only | Constants `pa=".claude"`, `la=".agents"`, `Rt="skills/**/SKILL.md"` in `opencode.exe` **1.17.10** | 2026-08-26 |
+| **OpenCode reads its own directory in both spellings** | Constant `fa="{skill,skills}/**/SKILL.md"` in the same binary, and its help table's `skill(s)` notation — see 6.4 | 2026-08-26 |
+| `npx skills` installs a whole module directory from a URL | Executed against a public repository with a nested layout | 2026-08-23 |
+| `npx skills` keeps two lock files and emits install telemetry | Source files `skill-lock.ts`, `local-lock.ts`, `telemetry.ts` | 2026-08-23 |
+| **Antigravity skill paths: `~/.gemini/config/skills/` global, `.agents/skills/` repo with three aliases** | Antigravity's own bundled `agy-customizations` skill — `docs/skills.md` ("a `skills/` folder inside a customization root, e.g. `.agents/skills/`") and `SKILL.md`'s Discovery Locations ("Global Configuration: `~/.gemini/config/`") | 2026-08-26 |
+| Antigravity discovers workspace roots by walking up from the CWD to the repository root | Same source, Discovery Locations §1 | 2026-08-26 |
+| Antigravity supports hooks, as one `hooks.json` in the customisation root | Same skill, `docs/hooks.md` | 2026-08-26 |
+| No skill installed on this machine uses a `metadata` frontmatter key — 13 of 13, across four vendors | `grep -rl '^metadata:'` over every deployed `SKILL.md` and Antigravity's five builtins | 2026-08-26 |
+| **The Agent Skills frontmatter contract: six fields, `name` and `description` required, `metadata` "a map from string keys to string values"** | agentskills.io/specification, reproduced in 13.1 | 2026-08-26 |
+| **`name` MUST match the parent directory name**, and admits no consecutive hyphens | Same source, `name` field | 2026-08-26 |
+| The specification's own `metadata` example uses the keys `author` and `version`, and it recommends "making your key names reasonably unique to avoid accidental conflicts" | Same source, `metadata` field | 2026-08-26 |
+| The reference validator `skills-ref` is Python and "for demonstration purposes"; no machine-readable schema is published | github.com/agentskills/agentskills, `skills-ref` | 2026-08-26 |
+| Windows junctions require no elevation | Executed locally | 2026-08-23 |
+
+- **R14.2** A row in this table MUST name the artifact and version it was read
+  from, and the date. When a host's installed version overtakes the version a
+  row cites, the row is **unverified again** until re-read. The machine that
+  wrote this document carried `codex-cli` **0.146.0** while the Codex row still
+  cited 0.120.0. Re-reading it changed the row (see Q6 in 14.2), which is the
+  argument for this requirement rather than an anecdote beside it.
+
+### 14.2 Open
 
 | # | Question | Blocks |
 |---|---|---|
@@ -432,9 +726,39 @@ This section exists so that no reader mistakes an assumption for a fact.
 | Q2 | Subagent paths and formats for Antigravity and OpenCode | Subagents |
 | Q3 | Whether hooks have any destination in hosts other than Claude Code | Hooks |
 
+**Q4, Q5 and Q6 are closed**, and every row of 6.1 now carries provenance in
+14.1. OpenCode reads both spellings of its own directory (6.4). Antigravity's paths were never `~/.gemini/antigravity/skills/`: its global
+root is `~/.gemini/config/` and its workspace root is `.agents/` with three
+aliases (6.5). Both were answered by reading the host, and Antigravity answered
+in the most direct way available — it ships its own customisation guide **as a
+skill**, so the specification was sitting in `builtin/skills/agy-customizations/`
+the whole time.
+
+**Q3 is partly answered by the same source.** Antigravity supports hooks, as a
+single `hooks.json` in the customisation root rather than a directory of files.
+So hooks have at least two destinations with two different shapes. Hooks remain
+in the roadmap Backlog; this narrows the question rather than closing it.
+
+Q6 asked whether Codex's paths still held at 0.146.0. They did, and there were
+more of them: three repo locations rather than one, a user-scope
+`$HOME/.agents/skills` that 6.3 implied but 6.1 never listed, and a machine-wide
+`/etc/codex/skills` this document does not model (R6.10). The re-read also
+refuted an inference drawn from the binary's own string table, that Codex might
+read `.claude/` and `.cursor/`: the documentation denies it outright. Strings
+adjacent in a binary are not a list, and that is the whole argument for R14.1.
+
+**No open question now blocks a shipped phase.** Q1–Q3 block features not yet
+built: P2 cannot honestly
+report a destination it cannot source, and P3 cannot deploy to one. Closing
+either means reading the host itself — its binary, its source, or its official
+documentation — never inferring from what happens to be on disk. Q4 is the
+worked example: what was on disk showed two directories and suggested a choice;
+the binary showed there was no choice to make.
+
 **R14.1** No requirement in this document may be implemented on the basis of an
-unverified path. Q1–Q3 MUST be resolved against the hosts themselves — their
-CLIs or their official documentation — before the corresponding feature is built.
+unverified path. Q1–Q3 MUST be resolved against the hosts themselves
+— their CLIs, their source, or their official documentation — before the
+corresponding feature is built.
 
 ---
 
@@ -443,11 +767,11 @@ CLIs or their official documentation — before the corresponding feature is bui
 | Phase | Contents | Exit criterion |
 |---|---|---|
 | **P0** | This specification | Reviewed; no open contradictions |
-| **P1** | Domain model and pure reconciliation | Every row of 10.2 unit-tested with no filesystem |
-| **P2** | Host matrix, host detection, visibility graph | `skill list` and `skill doctor` correct on a real machine |
-| **P3** | `skill deploy` / `skill remove`, ledger, manifest | Idempotent; every `block` state reproducible in a test |
-| **P4** | `skillwire` CLI with `sw` alias | Self-hosting: this repo's own skills deploy through it |
-| **P5** | Adoption by `macss` and `inquiry` | Both consume the package; no forked deployment logic remains |
+| **P1** | Domain model, pure reconciliation, typed error hierarchy (R12.7) | Every row of 10.2 unit-tested with no filesystem |
+| **P2** | Host matrix, host detection, visibility graph, annotations (7.5) | `skill list` and `skill doctor` correct on a real machine |
+| **P3** | `skill deploy` / `skill remove`, ledger, manifest, adoption (R10.6) | Idempotent; every `block` state reproducible in a test |
+| **P4** | `skillwire_cli`: the `skillwire` executable and its `sw` alias | Self-hosting: this repo's own skills deploy through it |
+| **P5** | Adoption by `macss` and `inquiry` | Both consume the `skillwire` package; no forked deployment logic remains |
 | **P6** | Subagents | Only after Q1 and Q2 are closed |
 
 **R15.1** `kind` and `subagent` MUST be present in the resolver signature and in
@@ -461,7 +785,7 @@ schema simultaneously.
 
 The five rules that override any later convenience:
 
-1. **Never destroy what Skillwire did not deploy.** — G3, R10.3
+1. **Never destroy what the acting consumer did not deploy.** — G3, R10.3
 2. **Never act implicitly.** No default host, scope, or artifact set. — G2, R12.2
 3. **Never bypass plan/apply.** — R12.4
 4. **Never let reconciliation touch the filesystem.** Pure function, I/O at the

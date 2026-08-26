@@ -1,7 +1,8 @@
 name: skillwire_cli
 description: >-
-  Canonical command-line consumer of the skillwire package. Deploys skills to
-  Claude Code, Codex, Antigravity, OpenCode and GitHub Copilot.
+  Canonical command-line consumer of the skillwire package. Provides the
+  skillwire executable and its sw alias, deploying skills to Claude Code, Codex,
+  Antigravity, OpenCode and GitHub Copilot.
 version: 0.0.1
 publish_to: none
 repository: https://github.com/ccisnedev/skillwire

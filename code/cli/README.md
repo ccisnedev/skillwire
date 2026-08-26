@@ -1,7 +1,7 @@
 # skillwire_cli — canonical CLI
 
-Executable `skillwire`, alias `sw`. Mounts the `skill` module over the
-`skillwire` library.
+Provides the `skillwire` executable and its `sw` alias. Mounts the `skill`
+module over the `skillwire` package.
 
 This CLI is the reference consumer, and it carries its own skills as assets of
 its own release, under `assets/skills/modules/`.

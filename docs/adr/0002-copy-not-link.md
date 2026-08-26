@@ -11,9 +11,11 @@ symlink or junction pointing into the CLI's installation directory. One source o
 truth, no duplication, edits propagate instantly.
 
 **One canonical copy, links from each host.** A single materialised copy in a
-Skillwire-owned directory, with a link from each host's directory to it. This is
+directory owned by the `skillwire` package, with a link from each host's
+directory to it. This is
 the model `npx skills` uses. Updating one directory updates every host at once,
-and a link that points into a Skillwire-owned directory is provably ours, which
+and a link that points into a directory owned by the `skillwire` package is
+provably ours, which
 makes ownership detectable without any extra bookkeeping.
 
 **An independent copy per host.** Each host's directory receives its own real

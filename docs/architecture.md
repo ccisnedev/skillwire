@@ -4,36 +4,52 @@
 
 | Layer | Responsibility |
 |---|---|
-| `code/skillwire` | The library. Domain model, reconciliation, host matrix, ledger. Knows nothing about any particular CLI |
-| `code/cli` | The canonical consumer. Mounts the `skill` module over the library and ships its own skills as assets |
+| `code/skillwire` | The `skillwire` package. Domain model, reconciliation, host matrix, ledger. Knows nothing about any particular CLI |
+| `code/cli` | `skillwire_cli`, the canonical consumer. Mounts the `skill` module over the `skillwire` package and ships its own skills as assets |
 
 ```
-cli  →  skillwire
+skillwire_cli  →  skillwire package  →  preview_executor
+       ↓
+modular_cli_sdk  →  preview_executor
 ```
 
-`cli` depends on `skillwire`. `skillwire` never depends on `cli`, and never on
-any other consumer. That direction is what makes the library reusable.
+The package depends on **`preview_executor`**, not on `modular_cli_sdk`. What it
+needs is the vocabulary for stating what a change would be before making it —
+`Step`, `Preview`, `Outcome`, `StepContext` — and that vocabulary lives one
+layer below the CLI framework, in a package with **no runtime dependencies of
+its own**. What it does not need is routing, module mounting, flag parsing or
+exit codes; those belong to the consumer, which is the thing that has flags.
+
+This works because `modular_cli_sdk` re-exports those four types from
+`preview_executor` rather than redeclaring them. A `Step` the package produces
+*is* the `Step` a consumer's `Command.steps()` returns. There is no adapter
+between them, and no version of this where the two drift apart.
+
+`skillwire_cli` depends on the `skillwire` package. The package never depends on
+`skillwire_cli`, and never on any other consumer. That direction is what makes
+the package reusable.
 
 There is no `db`, `api` or `app` layer: this project has no data layer, no
 service and no interface beyond the terminal. The MACSS canon suggests those
 three because they are the most common, and permits adding or removing layers.
 
-## The library is shared, the CLI is one consumer among several
+## The package is shared, the CLI is one consumer among several
 
-`skillwire` is written to be embedded. The canonical `skillwire` CLI is the
-first consumer and the reference implementation, but `macss` and `inquiry`
-consume the same library and gain the same `skill` module.
+The `skillwire` package is written to be embedded. `skillwire_cli` is the first
+consumer and the reference implementation, but `macss` and `inquiry` consume the
+same package and gain the same `skill` module.
 
 ```mermaid
 graph TD
     subgraph consumers[Consumer CLIs]
-        SW["skillwire<br/><i>canonical</i>"]
+        SW["skillwire_cli<br/><i>canonical</i>"]
         MA["macss"]
         IN["inquiry"]
     end
 
-    LIB["skillwire<br/><i>library</i>"]
+    LIB["skillwire<br/><i>package</i>"]
     SDK["modular_cli_sdk"]
+    PX["preview_executor<br/><i>no runtime deps</i>"]
 
     subgraph hosts[AI hosts]
         CC["Claude Code"]
@@ -49,6 +65,8 @@ graph TD
     SW --> SDK
     MA --> SDK
     IN --> SDK
+    LIB --> PX
+    SDK --> PX
     LIB --> CC
     LIB --> CX
     LIB --> AG
@@ -56,17 +74,22 @@ graph TD
     LIB --> CP
 ```
 
-Each consumer carries its own skills, as assets of its own release:
+`preview_executor` is the join. Both arrows into it are the reason a `Step`
+built by the package is the same type a consumer's `Command` hands to the SDK.
+
+Each consumer carries its own skills, as assets of its own release. Left, the
+consumer; right, where its skills live inside that consumer's repository:
 
 ```
-skillwire/  code/cli/assets/skills/modules/<module>/<skill>/
-macss/      code/cli/assets/skills/modules/<module>/<skill>/
-inquiry/    code/cli/assets/skills/modules/<module>/<skill>/
+skillwire_cli/  code/cli/assets/skills/modules/<module>/<skill>/
+macss/          code/cli/assets/skills/modules/<module>/<skill>/
+inquiry/        code/cli/assets/skills/modules/<module>/<skill>/
 ```
 
-The library never owns skills. It receives a materialised directory and resolves
-where it must land. A skill belongs to the release of the CLI that transports it,
-which is why it ships inside that CLI rather than in a shared location.
+The `skillwire` package never owns skills. It receives a materialised directory
+and resolves where it must land. A skill belongs to the release of the CLI that
+transports it, which is why it ships inside that CLI rather than in a shared
+location.
 
 Because all three deploy into the *same* host directories, the ledger records the
 owning consumer per deployment, and a deployment that would overwrite another
@@ -74,7 +97,8 @@ consumer's artifact is planned as `block`.
 
 ## The seam
 
-The library is built around one separation, and everything else follows from it.
+The `skillwire` package is built around one separation, and everything else
+follows from it.
 
 ```mermaid
 flowchart LR
@@ -92,7 +116,7 @@ generated skill is built by its generator; a subagent is transformed into the
 host's format.
 
 **Reconciliation** makes a host's directories match a desired set of
-materialised directories. It does not know, and must not know, how any of them
+materialised artifacts. It does not know, and must not know, how any of them
 came to exist.
 
 That is what lets one engine serve static skills, skills generated at runtime by
@@ -120,15 +144,15 @@ This matters because that middle layer is where a bug destroys a user's work.
 
 `modular_cli_sdk` distinguishes a `Query`, which reads and answers, from a
 `Command`, which changes something and must say what it would change first.
-Skillwire supplies the `Step`s; the SDK renders the plan, takes approval, and
-runs them.
+The `skillwire` package supplies the `Step`s; the SDK renders the plan, takes
+approval, and runs them.
 
 ```mermaid
 sequenceDiagram
     actor U as User
     participant CLI as Consumer CLI
     participant SDK as modular_cli_sdk
-    participant LIB as skillwire
+    participant LIB as skillwire package
     participant FS as Host directories
 
     U->>CLI: skill deploy --host=claude --scope=global --module=core --plan
@@ -173,9 +197,19 @@ See [ADR 0002](adr/0002-copy-not-link.md).
 - **Visibility graph.** Some hosts read other hosts' directories. The graph is
   part of the same data file, and every plan reports the consequences for hosts
   that are detected but were not named.
-- **Ledger.** Machine-local, keyed by `(artifact, kind, host, scope, subagent?)`,
-  recording the owning consumer. It is what makes a copy distinguishable from a
-  file somebody else put there.
+- **Plan annotations.** A unit can be correct *and* have a consequence the user
+  cannot infer. That is a second axis, not a seventh reconciliation state: an
+  annotation attaches to a unit and changes no verb. Visibility and the global
+  Claude/OpenCode asymmetry are its first two members. See PRD 7.5.
+- **Ledger.** **One per machine, shared by all three consumers**, keyed by
+  `(artifact, kind, host, scope, subagent?)` and recording the owning consumer.
+  It is what makes a copy distinguishable from a file somebody else put there.
+  Shared rather than per-consumer because a consumer that can read only its own
+  ledger cannot answer *which other consumer owns this* — and cannot answer it
+  at all for a consumer it has never heard of. See PRD R11.5.
 - **Manifest.** Repository-level and committed, declaring what a repo wants
   deployed. Manifest is to ledger as `package.json` is to `package-lock.json`.
-- **Errors.** Typed hierarchy in `skillwire`, surfaced by the SDK's exit codes.
+- **Errors.** Typed hierarchy in the `skillwire` package, rooted in one sealed
+  type and surfaced by the SDK's exit codes. Every condition a caller must
+  distinguish gets its own type, so no consumer matches on message text. See
+  PRD R12.7.

@@ -29,7 +29,7 @@ them.
 
 ## Consequences
 
-**The name describes the infrastructure, not the cargo.** A skillwire runs
+**The name describes the infrastructure, not the cargo.** A *skillwire* runs
 activesofts, and with the right link, knowsofts and linguasofts too: one system,
 several kinds of payload. That is exactly the resolver signature
 `(host, subagent?, kind, scope)`. The `skill` inside the word names the wire's
@@ -45,5 +45,8 @@ function from its name, and the README must therefore state it in the first line
 That cost is accepted: a descriptive name that must be replaced when subagents
 arrive is worse than an evocative one that never has to change.
 
-**The executable keeps a short alias.** `skillwire` is long to type, so `sw` is
-provided.
+**The executable keeps a short alias.** The `skillwire` executable is long to
+type, so `sw` is provided.
+
+**The word now names three things.** The package, `skillwire_cli` and the
+executable all carry it. How each is written in prose is settled in ADR 0004.
