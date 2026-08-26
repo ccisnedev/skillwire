@@ -4389,7 +4389,7 @@ pre-upgrade clean.
 ## 14. Requirement traceability
 
 Every normative requirement id in the specification, and the stage that
-discharges it. PRD Draft 2 raised the count from 35 to **55**: R6.4, R6.5,
+discharges it. PRD Draft 2 raised the count from 35 to **57**: R6.4, R6.5,
 R6.6-R6.10, R7.7-R7.9, R10.6, R11.5, R11.6, R12.7-R12.9, R13.6-R13.9 and R14.2
 are new, and four of the six
 gaps below closed as a result. **R12.0** is a normative naming rule with no phase row. Phase references point
@@ -4410,6 +4410,7 @@ at the stage group that carries the phase.
 | R6.8 | Stages 18, 30 | `repo` resolves to the repository root and nowhere else; G4 depends on it |
 | R6.9 | Stages 21, 22 | Intermediate `.agents/` directories are observed even though never written to |
 | R6.10 | Stage 18 | `/etc/codex/skills` is never a destination; if read, the reading is reported |
+| R6.11 | Stages 23, 26 | `synced` is rejected as an artifact name and skipped when scanning |
 | R6.6 | Stages 18, 21 | `.agents/` is Antigravity's resolved repo destination; the three aliases are recognised when observing |
 | R6.7 | Stage 18 | `.agent/skills/` stays nameable — the only single-host repo directory in the matrix |
 | R7.6 | Stage 22 | Closed by PRD Draft 2: carried as an annotation, §7.5 |
@@ -4440,6 +4441,7 @@ at the stage group that carries the phase.
 | R12.7 | Stage 6 | Typed error hierarchy, sealed root, mapped onto SDK exit codes |
 | R12.8 | Stages 1, 4 | The package depends on `preview_executor`, not the SDK; the `Step` type is shared, not adapted |
 | R12.9 | Stages 1, 15 | The package never uses `PreviewExecutor`; pinned by grep, not by discipline |
+| R12.10 | Stages 24, 30, 60 | `--host` is comma-separated; the SDK cannot express a repeatable flag |
 | R13.1 | Stage 43 | `core` holds only cross-domain skills; stage 62 records why macss's five are `lifecycle` |
 | R13.2 | Stages 43, 62 | Per-consumer name tests plus the `uniq -d` gate; **cross-repository enforcement is not automatable today** |
 | R13.3 | Stages 23, 40, 41–43, 53, 62 | `metadata` map; no `skill.yaml`. Its string→string premise is verified, not assumed — PRD 13.1 |

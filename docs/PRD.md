@@ -569,7 +569,7 @@ destination without having been targeted.
 
 | Parameter | Values | Required |
 |---|---|---|
-| `--host` | `claude` · `codex` · `antigravity` · `opencode` · `copilot` | **yes**, repeatable |
+| `--host` | `claude` · `codex` · `antigravity` · `opencode` · `copilot` | **yes**, comma-separated — see R12.10 |
 | `--scope` | `global` · `repo` | **yes** |
 | `--skill` | artifact name | exactly one of these three |
 | `--module` | module name | exactly one of these three |
@@ -578,6 +578,13 @@ destination without having been targeted.
 
 - **R12.2** There is no implicit "all hosts" and no default scope. Omitting a
   required parameter is an error, never a default.
+- **R12.10** `--host` names several hosts as one **comma-separated** value, not
+  by repeating the flag. Draft 1 called it repeatable and `modular_cli_sdk`
+  cannot express that: `cli_router` keeps flags in a map keyed by name, so a
+  second `--host` silently overwrites the first, and the SDK refuses to let a
+  command declare a facet the runtime cannot honour. A list keeps the intent —
+  name several hosts in one invocation — and is the only spelling that cannot
+  lose one of them without saying so.
 - **R12.3** `--scope=repo` outside a repository MUST fail explicitly. It MUST NOT
   fall back to `global`.
 - **R12.4** Every Command MUST require `--plan` or `--apply`. `modular_cli_sdk`
