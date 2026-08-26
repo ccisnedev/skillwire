@@ -1196,66 +1196,68 @@ test/reconcile_remove_test.dart test/reconcile_force_test.dart` exits 0.
 Exit criterion for the whole group, from PRD §15 row P2: `skill list` and
 `skill doctor` are correct on a real machine.
 
-### Stage 16 — Close Q5 and Q6 before any path is written down
+### Stage 16 — Close Q6 before any path is written down
 
-**Q4 is closed; this stage inherited its successors.** The original question was
-which OpenCode global directory to believe. The answer, read from
-`opencode.exe` 1.17.10 on 2026-08-26, is **both**: OpenCode resolves its own
-skill directories with the brace glob `fa="{skill,skills}/**/SKILL.md"` and the
-external namespaces with `Rt="skills/**/SKILL.md"`. Its help table says the same
-in its own notation — `` `~/.config/opencode/skill(s)/<name>/SKILL.md` ``. PRD
-6.4 records it and R6.5 draws the consequence.
+**Q4 and Q5 are already closed; only Q6 remains.** Both were answered by reading
+the host rather than the disk, and both changed the matrix.
 
-Neither `macss` (singular) nor `inquiry` (plural) was wrong, and the five
-`macss-*` directories in `~/.config/opencode/skill/` and the three in
-`~/.config/opencode/skills/` are **all live at once** on this machine.
+**Q4 — OpenCode reads both spellings.** `opencode.exe` 1.17.10 resolves its own
+tree with `fa="{skill,skills}/**/SKILL.md"` and the external namespaces with
+`Rt="skills/**/SKILL.md"`; its help table says the same in its own notation,
+`` `~/.config/opencode/skill(s)/<name>/SKILL.md` ``. Neither `macss` (singular)
+nor `inquiry` (plural) was wrong, and the eight skills split across the two
+directories on this machine are all live at once. PRD 6.4 records it; R6.5 makes
+the two spellings one destination for the one-path invariant.
 
-That closure left two questions behind it, both found the same way and both on
-the critical path:
+**Q5 — Antigravity's paths were wrong, not merely unsourced.** Its global root
+is `~/.gemini/config/`, not `~/.gemini/antigravity/`; `~/.gemini/antigravity-cli/`
+is the installation, whose `builtin/skills/` are mounted by name rather than
+discovered. Its workspace root is `.agents/`, with `.agent/`, `_agents/` and
+`_agent/` as aliases, discovered by walking up from the working directory to the
+repository root.
 
-| # | The row that could not be sourced | Blocks |
-|---|---|---|
-| Q5 | Antigravity. PRD 6.1 carried `~/.gemini/antigravity/skills/` and `.agent/skills/` with no provenance in 14.1 at all. The installed layout is `~/.gemini/antigravity-cli/`, whose only skills sit in `builtin/skills/` — five, each a `SKILL.md` beside a `docs/` directory. No user-extensible directory was found | Antigravity, both scopes |
-| Q6 | Codex. 14.1's row was read from `codex.exe` **0.120.0**; the installed CLI is **0.146.0**. `~/.codex/plugins/` now exists — the location 6.2 associates with Q1 | Codex, and Q1 with it |
+The source is worth noting for how the remaining questions should be attacked:
+**Antigravity ships its own customisation specification as a skill.** The answer
+was sitting in `~/.gemini/antigravity-cli/builtin/skills/agy-customizations/` —
+`docs/skills.md` for the layout, `SKILL.md`'s Discovery Locations for the roots.
+Before extracting strings from a binary, check whether the host documents itself
+on disk.
 
-R6.4 is what makes these visible rather than latent: a matrix row without
-provenance in 14.1 must be marked unverified and must **raise** rather than
-return a path. Stage 17 implements that refusal; this stage removes the reason
-to invoke it.
+Two consequences reach further than the matrix row:
 
-- [ ] **Q5, step 1.** Record the installed Antigravity version and layout:
-      `ls ~/.gemini/antigravity-cli/` and whatever the `bin/` entry reports for
-      `--version`. Note that `agentapi.bat` is the only executable there.
-- [ ] **Q5, step 2.** Apply the technique that closed Q4 — read the host, not
-      the disk. Search the Antigravity payload for its skill-directory constants
-      the way `fa` and `Rt` were recovered from OpenCode. `builtin/skills/`
-      proves Antigravity consumes `SKILL.md`; it does **not** prove where a user
-      may add one.
-- [ ] **Q5, step 3.** Cross-check against Antigravity's official documentation.
-      Record the URL and the retrieval date.
-- [ ] **Q5, step 4.** Record the finding in
-      `docs/adr/0008-the-antigravity-skill-paths.md`, then amend PRD 6.1 with
-      the resolved paths, add the 14.1 rows with artifact, version and date
-      (R14.2), and delete the Q5 row from 14.2. **If no user-extensible
-      directory exists, that is a finding, not a failure**: record it, and drop
-      Antigravity from 6.1 to a documented non-destination rather than leaving a
-      row nobody can serve.
-- [ ] **Q6, step 1.** Re-read Codex 0.146.0 with the same extraction 14.1 used
-      for 0.120.0. Confirm or correct `CODEX_HOME/skills`, `~/.codex/skills`,
-      `.agents/skills`, and the `skills_watcher` symbol.
-- [ ] **Q6, step 2.** Update both 14.1 rows to cite 0.146.0 and today's date
-      (R14.2), and delete the Q6 row from 14.2. If a path changed between the
-      two versions, that fact belongs in the ADR too — it is evidence about how
-      fast this matrix decays, which is the argument R14.2 exists on.
-- [ ] **Both.** Confirm `~/.agents/` still does not exist on this machine, so
-      the neutral namespace of PRD 6.3 stays vacuous and is not silently
+- **The neutral namespace is four hosts, not three.** Antigravity joins Codex,
+  OpenCode and Copilot on `.agents/skills/` (PRD 6.3). Every visibility
+  annotation that names the neutral namespace gains a fourth host, and stage 21
+  must seed its fixtures accordingly.
+- **`.agent/skills/` is the only single-host repo directory in the matrix.**
+  R6.7 keeps it reachable, because it is the one escape from the neutral
+  namespace's all-or-nothing bargain — the only way to give Antigravity a
+  variant the other three cannot see.
+
+- [ ] **Q6, step 1.** Re-read Codex at its installed version. PRD 14.1's row
+      cites `codex.exe` **0.120.0**; `codex --version` reports **0.146.0** here.
+      Apply the same extraction: confirm or correct `CODEX_HOME/skills`,
+      `~/.codex/skills`, `.agents/skills`, and the `skills_watcher` symbol.
+- [ ] **Q6, step 2.** Check what `~/.codex/plugins/` is. It exists on this
+      machine (holding only `cache/`) and did not when 14.1 was written. PRD 6.2
+      associates `~/.agents/plugins/<plugin>/agents/` with Q1, so a plugins root
+      appearing under `~/.codex/` is evidence about Q1 as well — record it
+      whichever way it falls.
+- [ ] **Q6, step 3.** Record the finding in
+      `docs/adr/0008-the-codex-paths-at-0-146.md`, update both 14.1 rows to cite
+      0.146.0 with today's date (R14.2), and delete the Q6 row from 14.2. If a
+      path moved between 0.120.0 and 0.146.0, say so explicitly: that is
+      evidence about how fast this matrix decays, which is the argument R14.2
+      rests on.
+- [ ] Confirm `~/.agents/` still does not exist on this machine, so the neutral
+      namespace of PRD 6.3 stays vacuous at `global` scope and is not silently
       depended upon.
 
-**Exit criterion.** `docs/adr/0008-the-antigravity-skill-paths.md` exists and
-carries a quoted extract or a documentation URL with a retrieval date;
-`grep -c "Q5\|Q6" docs/PRD.md` reports 0; every row of PRD 14.1 carries a
-version and a date (R14.2); and no row of PRD 6.1 reads `unverified`. No path is
-written into the matrix at stage 18 until all four hold.
+**Exit criterion.** `docs/adr/0008-the-codex-paths-at-0-146.md` exists and
+carries a quoted extract with a version and a retrieval date;
+`grep -c "Q6" docs/PRD.md` reports 0; every row of PRD 14.1 carries a date
+(R14.2); and no row of PRD 6.1 reads `unverified`. No path is written into the
+matrix at stage 18 until all four hold.
 
 **Rollback.** None — this stage reads only.
 
@@ -4345,8 +4347,8 @@ pre-upgrade clean.
 ## 14. Requirement traceability
 
 Every normative requirement id in the specification, and the stage that
-discharges it. PRD Draft 2 raised the count from 35 to **46**: R6.4, R6.5,
-R7.7-R7.9, R10.6, R11.5, R11.6, R12.7-R12.9 and R14.2 are new, and four of the six
+discharges it. PRD Draft 2 raised the count from 35 to **48**: R6.4, R6.5,
+R6.6, R6.7, R7.7-R7.9, R10.6, R11.5, R11.6, R12.7-R12.9 and R14.2 are new, and four of the six
 gaps below closed as a result. **R12.0** is a normative naming rule with no phase row. Phase references point
 at the stage group that carries the phase.
 
@@ -4362,6 +4364,8 @@ at the stage group that carries the phase.
 | R7.5 | Stages 22, 33 | One-path invariant, pure and on disk |
 | R6.4 | Stages 16, 17 | A matrix row without provenance in 14.1 must refuse to resolve; this is what surfaced Q5 and Q6 |
 | R6.5 | Stages 22, 33 | OpenCode's two spellings are one destination for R7.5; the brace glob is scoped to its own tree |
+| R6.6 | Stages 18, 21 | `.agents/` is Antigravity's resolved repo destination; the three aliases are recognised when observing |
+| R6.7 | Stage 18 | `.agent/skills/` stays nameable — the only single-host repo directory in the matrix |
 | R7.6 | Stage 22 | Closed by PRD Draft 2: carried as an annotation, §7.5 |
 | R7.7 | Stage 22 | An annotation never changes a verb nor refuses `--apply` |
 | R7.8 | Stages 21, 22 | R7.2, R7.3 and R7.6 share one annotation type |
@@ -4409,17 +4413,18 @@ visible.
    host in the data file and stage 28 records the resolved value, but the
    preference order itself is a judgement made once and must be reviewed when a
    host's directory list changes.
-2. **Q1, Q2, Q3, Q5 and Q6 are open.** Q1 and Q2 gate subagents and Q3 gates
-   hooks; all three are outside this runbook's committed scope — see section 15.
-   **Q5 (Antigravity) and Q6 (Codex 0.146.0) are on the critical path**: each
-   blocks a supported host in a shipped phase. Stage 16 closes both, and stage
-   17 builds the rule that would have surfaced them unaided.
+2. **Q1, Q2, Q3 and Q6 are open.** Q1 and Q2 gate subagents and Q3 gates hooks;
+   all three are outside this runbook's committed scope — see section 15.
+   **Q6 (Codex at 0.146.0) is the one on the critical path**, and stage 16
+   closes it; stage 17 builds the rule that would have surfaced it unaided.
 
-   Q4 was on this list and is **closed**: OpenCode reads both spellings of its
-   own directory. It is worth keeping the shape of that answer in mind for Q5
-   and Q6 — what was on disk showed two directories and implied a choice, and
-   the binary showed there was no choice to make. Disk state is a symptom; the
-   host is the source.
+   Q4 and Q5 were on this list and are **closed**. Keep the shape of both
+   answers in mind for what remains. Q4: the disk showed two OpenCode
+   directories and implied a choice; the binary showed there was no choice to
+   make. Q5: the disk showed no Antigravity skills directory at all, and the
+   host's own bundled documentation — shipped, of all things, **as a skill** —
+   gave both paths outright. Disk state is a symptom. The host is the source,
+   and it may be documenting itself already.
 
 **Closed by PRD Draft 2.** Four gaps in the list above have gone, and the record
 of what closed them belongs here rather than in a commit message:

@@ -14,10 +14,14 @@
 > It then re-read the host matrix against the hosts actually installed. OpenCode
 > reads **both** spellings of its own directory (6.4) — closing Q4, adding R6.5,
 > and vindicating `macss` and `inquiry` alike, since neither was wrong.
-> Antigravity's two paths turned out to have no provenance at all and are now
-> Q5; Codex's were read from a binary twenty-six minor versions old and are now
-> Q6. R6.4 generalised into the rule that made both visible: a matrix row
-> without provenance in 14.1 must refuse to resolve.
+> Antigravity's two paths turned out to have no provenance at all — and, once
+> read, to be **wrong**: its global root is `~/.gemini/config/`, not
+> `~/.gemini/antigravity/`, and its workspace root is `.agents/` with three
+> aliases (6.5). That moves Antigravity into the neutral namespace, making it
+> four hosts sharing `.agents/skills/` rather than three. Codex's row was read
+> from a binary twenty-six minor versions old and is now Q6. R6.4 generalised
+> into the rule that made all of this visible: a matrix row without provenance
+> in 14.1 must refuse to resolve.
 >
 > Finally, 12.6 settles where the package sits. It depends on
 > `preview_executor` — the transport-neutral engine `modular_cli_sdk` is itself
@@ -142,7 +146,7 @@ any other meaning. The three things the word `skillwire` names are separated in
 |---|---|---|
 | Claude Code | `~/.claude/skills/` | `.claude/skills/` |
 | Codex | `$CODEX_HOME/skills/` — default `~/.codex/skills/` | `.agents/skills/` |
-| Antigravity | **unverified — see Q5** | **unverified — see Q5** |
+| Antigravity | `~/.gemini/config/skills/` | `.agents/skills/` — aliases `.agent/` · `_agents/` · `_agent/`, see 6.5 |
 | OpenCode | `~/.config/opencode/skill/` **·** `~/.config/opencode/skills/` · `~/.claude/skills/` · `~/.agents/skills/` | `.opencode/skill/` **·** `.opencode/skills/` · `.claude/skills/` · `.agents/skills/` |
 | GitHub Copilot | `~/.copilot/skills/` · `~/.agents/skills/` | `.github/skills/` · `.claude/skills/` · `.agents/skills/` |
 
@@ -160,8 +164,8 @@ OpenCode's own directory exists in **both** spellings and both are read; see
   is a data change.
 - **R6.4** Every path in this matrix MUST carry provenance in 14.1. A row without
   it MUST be marked unverified, and resolving it MUST raise rather than return a
-  path (R14.1). This is the general rule; Antigravity is currently its only
-  instance, tracked as Q5.
+  path (R14.1). Every row currently carries provenance; the rule stands for the
+  next host added, and for the next release that moves a path (R14.2).
 
 ### 6.2 Subagent paths
 
@@ -176,12 +180,34 @@ This table is **incomplete and blocks subagent support only**. Skills are unaffe
 
 ### 6.3 The neutral namespace
 
-`.agents/skills/` and `~/.agents/skills/` are read by Codex, OpenCode and
-Copilot. `~/.agents/plugins/` is used by Codex for its plugin marketplace.
+`.agents/skills/` is read by **four** of the five hosts — Codex, OpenCode,
+Copilot and Antigravity — and `~/.agents/skills/` by three of them; Antigravity
+keeps its global customisations under `~/.gemini/config/` instead.
+`~/.agents/plugins/` is used by Codex for its plugin marketplace.
 
-Deploying into `.agents/` reaches three hosts with one copy, at the cost of
-losing per-host variation, since all three read the same bytes. The `skillwire`
+Deploying into `.agents/` reaches four hosts with one copy, at the cost of
+losing per-host variation, since all four read the same bytes. The `skillwire`
 package MUST expose this as an explicit destination, never as a hidden optimisation.
+
+### 6.5 Antigravity accepts four spellings of its workspace root
+
+Antigravity discovers workspace customisations under `.agents/`, `.agent/`,
+`_agents/` or `_agent/`, and **walks up from the working directory to the
+repository root** looking for them rather than checking the root alone. Global
+customisations live under `~/.gemini/config/`, not under the CLI's own
+`~/.gemini/antigravity-cli/` — that directory holds the installation, whose
+`builtin/skills/` are mounted by name rather than discovered.
+
+- **R6.6** `.agents/` is the destination the package resolves for Antigravity at
+  `repo` scope (R6.2), because it is the spelling the other three hosts also
+  read; the aliases are recognised when **observing** state, so an artifact
+  already sitting in `.agent/skills/` is seen rather than deployed over.
+- **R6.7** A consumer that wants Antigravity to hold a variant the other three
+  hosts do not see MUST be able to name one of the aliases explicitly.
+  `.agent/skills/` is the only repo-scope directory in the whole matrix that
+  exactly one host reads, which makes it the sole escape from the neutral
+  namespace's all-or-nothing bargain. Hiding it would remove a capability the
+  ecosystem actually offers.
 
 ### 6.4 OpenCode reads both spellings
 
@@ -226,6 +252,8 @@ cannot infer.
 | OpenCode ← `.claude/skills/` | repo | OpenCode documentation |
 | OpenCode ← `~/.agents/skills/` · `.agents/skills/` | both | OpenCode documentation |
 | Codex ← `.agents/skills/` | repo | Codex binary 0.120.0 |
+| Antigravity ← `.agents/skills/` | repo | Antigravity `agy-customizations` skill, `docs/skills.md` and `SKILL.md` |
+| Antigravity ← `.agent/` · `_agents/` · `_agent/` | repo | Same source; the four are aliases of one root |
 | Copilot ← `.claude/skills/` | **repo only** | GitHub documentation |
 | Copilot ← `~/.agents/skills/` · `.agents/skills/` | both | GitHub documentation |
 
@@ -583,6 +611,10 @@ verified fact quietly becomes a stale one.
 | **OpenCode reads its own directory in both spellings** | Constant `fa="{skill,skills}/**/SKILL.md"` in the same binary, and its help table's `skill(s)` notation — see 6.4 | 2026-08-26 |
 | `npx skills` installs a whole module directory from a URL | Executed against a public repository with a nested layout | 2026-08-23 |
 | `npx skills` keeps two lock files and emits install telemetry | Source files `skill-lock.ts`, `local-lock.ts`, `telemetry.ts` | 2026-08-23 |
+| **Antigravity skill paths: `~/.gemini/config/skills/` global, `.agents/skills/` repo with three aliases** | Antigravity's own bundled `agy-customizations` skill — `docs/skills.md` ("a `skills/` folder inside a customization root, e.g. `.agents/skills/`") and `SKILL.md`'s Discovery Locations ("Global Configuration: `~/.gemini/config/`") | 2026-08-26 |
+| Antigravity discovers workspace roots by walking up from the CWD to the repository root | Same source, Discovery Locations §1 | 2026-08-26 |
+| Antigravity supports hooks, as one `hooks.json` in the customisation root | Same skill, `docs/hooks.md` | 2026-08-26 |
+| No skill installed on this machine uses a `metadata` frontmatter key — 13 of 13, across four vendors | `grep -rl '^metadata:'` over every deployed `SKILL.md` and Antigravity's five builtins | 2026-08-26 |
 | Windows junctions require no elevation | Executed locally | 2026-08-23 |
 
 - **R14.2** A row in this table MUST name the artifact and version it was read
@@ -598,14 +630,23 @@ verified fact quietly becomes a stale one.
 | Q1 | Codex subagent format: the binary shows `agents/openai.yaml` inside `~/.agents/plugins/`; a secondary source reports TOML in `~/.codex/agents/`. Both may exist | Subagents |
 | Q2 | Subagent paths and formats for Antigravity and OpenCode | Subagents |
 | Q3 | Whether hooks have any destination in hosts other than Claude Code | Hooks |
-| Q5 | Antigravity's skill paths. 6.1 carried `~/.gemini/antigravity/skills/` and `.agent/skills/` with no provenance in 14.1. The installed layout is `~/.gemini/antigravity-cli/`, whose only skills live in `builtin/skills/` — five of them, each a `SKILL.md` beside a `docs/` directory. No user-extensible directory was found | **Antigravity, both scopes** |
 | Q6 | Whether Codex's paths still hold at `codex-cli` 0.146.0. 14.1's row was read from 0.120.0, and `~/.codex/plugins/` now exists on the author's machine — the location 6.2 associates with Q1 | Codex, and Q1 with it |
 
-**Q4 is closed.** OpenCode reads both spellings of its own directory; see 6.4
-and the two 14.1 rows dated 2026-08-26.
+**Q4 and Q5 are closed.** OpenCode reads both spellings of its own directory
+(6.4). Antigravity's paths were never `~/.gemini/antigravity/skills/`: its global
+root is `~/.gemini/config/` and its workspace root is `.agents/` with three
+aliases (6.5). Both were answered by reading the host, and Antigravity answered
+in the most direct way available — it ships its own customisation guide **as a
+skill**, so the specification was sitting in `builtin/skills/agy-customizations/`
+the whole time.
 
-Q1–Q3 block features not yet built. **Q5 and Q6 block hosts in a shipped
-phase**, and are the open questions on the critical path: P2 cannot honestly
+**Q3 is partly answered by the same source.** Antigravity supports hooks, as a
+single `hooks.json` in the customisation root rather than a directory of files.
+So hooks have at least two destinations with two different shapes. Hooks remain
+in the roadmap Backlog; this narrows the question rather than closing it.
+
+Q1–Q3 block features not yet built. **Q6 blocks a host in a shipped phase**, and
+is the one open question on the critical path: P2 cannot honestly
 report a destination it cannot source, and P3 cannot deploy to one. Closing
 either means reading the host itself — its binary, its source, or its official
 documentation — never inferring from what happens to be on disk. Q4 is the
@@ -613,7 +654,7 @@ worked example: what was on disk showed two directories and suggested a choice;
 the binary showed there was no choice to make.
 
 **R14.1** No requirement in this document may be implemented on the basis of an
-unverified path. Q1–Q3, Q5 and Q6 MUST be resolved against the hosts themselves
+unverified path. Q1–Q3 and Q6 MUST be resolved against the hosts themselves
 — their CLIs, their source, or their official documentation — before the
 corresponding feature is built.
 
@@ -625,7 +666,7 @@ corresponding feature is built.
 |---|---|---|
 | **P0** | This specification | Reviewed; no open contradictions |
 | **P1** | Domain model, pure reconciliation, typed error hierarchy (R12.7) | Every row of 10.2 unit-tested with no filesystem |
-| **P2** | Host matrix, host detection, visibility graph, annotations (7.5) | `skill list` and `skill doctor` correct on a real machine; Q5 and Q6 closed |
+| **P2** | Host matrix, host detection, visibility graph, annotations (7.5) | `skill list` and `skill doctor` correct on a real machine; Q6 closed |
 | **P3** | `skill deploy` / `skill remove`, ledger, manifest, adoption (R10.6) | Idempotent; every `block` state reproducible in a test |
 | **P4** | `skillwire_cli`: the `skillwire` executable and its `sw` alias | Self-hosting: this repo's own skills deploy through it |
 | **P5** | Adoption by `macss` and `inquiry` | Both consume the `skillwire` package; no forked deployment logic remains |
