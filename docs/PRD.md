@@ -155,7 +155,7 @@ any other meaning. The three things the word `skillwire` names are separated in
 
 | Host | `global` | `repo` |
 |---|---|---|
-| Claude Code | `~/.claude/skills/` | `.claude/skills/` |
+| Claude Code | `~/.claude/skills/` | `.claude/skills/` — also loaded from nested directories below the working directory, see 6.6 |
 | Codex | `$CODEX_HOME/skills/` — default `~/.codex/skills/` · `~/.agents/skills/` | `.agents/skills/` — at the working directory, its parents, **and** the repository root, see 6.6 |
 | Antigravity | `~/.gemini/config/skills/` | `.agents/skills/` — aliases `.agent/` · `_agents/` · `_agent/`, see 6.5 |
 | OpenCode | `~/.config/opencode/skill/` **·** `~/.config/opencode/skills/` · `~/.claude/skills/` · `~/.agents/skills/` | `.opencode/skill/` **·** `.opencode/skills/` · `.claude/skills/` · `.agents/skills/` |
@@ -273,6 +273,22 @@ at the repository root nor in the current directory.
   (7.3) and must be seen — a host that loads two same-named skills is the
   collision R7.5 exists to prevent, and the package cannot report it without
   looking where the host looks.
+
+**Claude Code searches downward instead**: nested `.claude/skills/` below the
+working directory load as well, so a monorepo package can carry skills that
+apply when working on it. Three of five hosts therefore discover `repo`-scope
+artifacts somewhere other than the repository root — two walking up, one walking
+down. R6.8 and R6.9 apply to both directions.
+
+Claude Code's precedence is also the reverse of the intuitive one: **personal
+overrides project**. A skill deployed at `global` scope shadows a same-named
+skill deployed at `repo` scope in the same repository, which is a consequence
+7.5 must annotate rather than leave the user to discover.
+
+- **R6.11** `synced` MUST be rejected as an artifact name. Claude Code reserves
+  the directory in every one of its skill locations, in any capitalisation, for
+  skills downloaded from claude.ai. Deploying into it would put this package's
+  artifacts where another mechanism believes it owns the contents.
 
 **Codex also reads `/etc/codex/skills`**, a machine-wide location that is neither
 `global` (user-level, per the glossary) nor `repo`. It is out of scope: a
@@ -705,6 +721,9 @@ verified fact quietly becomes a stale one.
 | Antigravity discovers workspace roots by walking up from the CWD to the repository root | Same source, Discovery Locations §1 | 2026-08-26 |
 | Antigravity supports hooks, as one `hooks.json` in the customisation root | Same skill, `docs/hooks.md` | 2026-08-26 |
 | No skill installed on this machine uses a `metadata` frontmatter key — 13 of 13, across four vendors | `grep -rl '^metadata:'` over every deployed `SKILL.md` and Antigravity's five builtins | 2026-08-26 |
+| **Claude Code skill paths: `~/.claude/skills/<name>/SKILL.md` personal, `.claude/skills/<name>/SKILL.md` project** | Anthropic documentation, code.claude.com/docs/en/skills, "Where skills live" | 2026-08-26 |
+| **Claude Code also loads nested `.claude/skills/` below the working directory**, and personal *overrides* project when names collide | Same source | 2026-08-26 |
+| **`synced` is a reserved directory name** in Claude Code's enterprise, personal and project skill locations, in any capitalisation | Same source | 2026-08-26 |
 | **The Agent Skills frontmatter contract: six fields, `name` and `description` required, `metadata` "a map from string keys to string values"** | agentskills.io/specification, reproduced in 13.1 | 2026-08-26 |
 | **`name` MUST match the parent directory name**, and admits no consecutive hyphens | Same source, `name` field | 2026-08-26 |
 | The specification's own `metadata` example uses the keys `author` and `version`, and it recommends "making your key names reasonably unique to avoid accidental conflicts" | Same source, `metadata` field | 2026-08-26 |

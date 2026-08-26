@@ -10,6 +10,14 @@ library;
 
 export 'src/hash/content_hash.dart' show contentHash;
 
+export 'src/hosts/host_matrix.dart'
+    show HostDirectory, HostEntry, HostMatrix, Provenance, VisibilityEdge;
+
+export 'src/hosts/resolution.dart' show HostDetector, PathResolver;
+
+export 'src/validate/skill_validator.dart'
+    show Finding, SkillFrontmatter, SkillValidator, ValidationResult;
+
 export 'src/reconcile/reconciler.dart' show Plan, reconcile;
 export 'src/reconcile/state.dart'
     show Desired, LedgerRecord, Observed, Operation, Verb;

@@ -23,10 +23,10 @@ stages, each with a mechanically verifiable exit criterion.
 
 ## P1 — Domain and reconciliation
 
-- [ ] Domain model, with `kind` and `subagent` in the resolver signature
-- [ ] Typed error hierarchy, sealed root (R12.7)
-- [ ] `plan(observed, desired)` as a pure function
-- [ ] Every reconciliation state unit-tested with no filesystem, adoption
+- [x] Domain model, with `kind` and `subagent` in the resolver signature
+- [x] Typed error hierarchy, sealed root (R12.7)
+- [x] `plan(observed, desired)` as a pure function
+- [x] Every reconciliation state unit-tested with no filesystem, adoption
       included (R10.6)
 
 ## P2 — Hosts
