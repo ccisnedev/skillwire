@@ -23,6 +23,14 @@
 > into the rule that made all of this visible: a matrix row without provenance
 > in 14.1 must refuse to resolve.
 >
+> 13.1 reproduces the Agent Skills frontmatter contract, read from
+> agentskills.io on 2026-08-26. It confirms R13.3's premise — `metadata` really
+> is "a map from string keys to string values" — and supplies the citation R7.5
+> had been arguing without: `name` must match the parent directory name. R13.6
+> fixes the vocabulary at two keys, `version` and `skillwire-origin`; R13.7 puts
+> `license` back where the specification put it; R13.9 makes `compatibility`
+> reported and never parsed.
+>
 > Finally, 12.6 settles where the package sits. It depends on
 > `preview_executor` — the transport-neutral engine `modular_cli_sdk` is itself
 > built on — and never on the SDK, so the `Step` it builds is the same type a
@@ -278,10 +286,12 @@ Copilot←Claude edge would produce false warnings and is non-conforming.
 
 **R7.5** A deployment that would violate this invariant MUST be planned as
 `block`. Renaming an artifact to disambiguate — for example a `_opencode`
-suffix — is explicitly rejected: the Agent Skills specification requires `name`
-to equal the directory name, so a suffix creates a *second artifact* with a
-different invocation command, and both remain visible to the host. That is the
-collision the invariant exists to prevent.
+suffix — is explicitly rejected. The Agent Skills specification requires `name`
+to **match the parent directory name** (13.1), so a suffix creates a *second
+artifact* with a different invocation command, and both remain visible to the
+host. That is the collision the invariant exists to prevent. Note also that the
+specification forbids consecutive hyphens, so a `--opencode` suffix is not
+merely discouraged but invalid.
 
 ### 7.4 An irreducible limitation
 
@@ -580,15 +590,55 @@ code/cli/assets/skills/modules/
 - **R13.2** Artifact names MUST be globally unique across all modules and all
   consumers. A module is source-tree organisation only; deployment is flat.
 - **R13.3** Version and provenance live in the `metadata` map of the `SKILL.md`
-  frontmatter, which the specification defines as a string→string map. A separate
-  `skill.yaml` is prohibited: it would create a second source of truth for the
-  same fact. `CHANGELOG.md` is permitted, as the specification does not cover it.
+  frontmatter, which the specification defines as "a map from string keys to
+  string values". A separate `skill.yaml` is prohibited: it would create a second
+  source of truth for the same fact. `CHANGELOG.md` is permitted, as the
+  specification does not cover it.
+
 - **R13.4** Every consumer holds its own skills under its own
   `assets/skills/modules/`. There is no shared skill directory across consumers,
   and no build step copying skills between layers.
 - **R13.5** Conforming to `SKILL.md` is sufficient compatibility with the wider
   ecosystem. Discoverability by any particular third-party installer is a
   courtesy, never a requirement, and MUST NOT constrain this layout.
+
+### 13.1 The frontmatter contract
+
+The Agent Skills specification defines six frontmatter fields, two of them
+required. It is reproduced here because every rule below depends on it, and
+because 14.1 dates it — a specification is a fact about the world like any other.
+
+| Field | Required | Constraint |
+|---|---|---|
+| `name` | **Yes** | 1–64 characters; lowercase alphanumerics and hyphens; no leading, trailing or consecutive hyphen; **must match the parent directory name** |
+| `description` | **Yes** | 1–1024 characters, non-empty |
+| `license` | No | A licence name, or a reference to a bundled licence file |
+| `compatibility` | No | ≤500 characters. Intended product, system packages, network access |
+| `metadata` | No | A map from string keys to string values |
+| `allowed-tools` | No | Space-separated pre-approved tools. **Experimental** |
+
+- **R13.6** The `metadata` keys the `skillwire` package reads are exactly two:
+  **`version`**, a SemVer string, and **`skillwire-origin`**, the consumer that
+  transports the skill. `version` is unprefixed because it is the key the
+  specification's own example uses and its meaning is universal — a catalogue
+  reading `metadata.version` gets the right answer. `skillwire-origin` is
+  prefixed because "which consumer transports this" is this project's semantics,
+  and the specification recommends "making your key names reasonably unique to
+  avoid accidental conflicts" for exactly that case.
+- **R13.7** `license` MUST be the top-level field, never a `metadata` key. The
+  specification gives it its own field, and duplicating it into `metadata` would
+  recreate the two-sources-of-truth problem R13.3 exists to prevent.
+- **R13.8** `skillwire-origin` is **not** ownership. Anyone can write
+  `skillwire-origin: macss` into a file by hand. It is a courtesy that lets a
+  state 6 `block` say who *appears* to have put a directory there instead of only
+  that nobody recorded it. Ownership is the ledger and nothing else — R11.2, and
+  non-negotiable rule 1.
+- **R13.9** `skill validate` MUST validate `compatibility` when present (≤500
+  characters) and MUST surface its text as a plan annotation (7.5) when the
+  deployment targets a host the text does not name. It MUST NOT parse it: the
+  specification defines it as prose, and reading structure into prose would
+  invent a grammar nobody wrote. The reader decides; the tool only makes sure the
+  declaration is not invisible at the moment it matters (G5).
 
 ---
 
@@ -615,6 +665,10 @@ verified fact quietly becomes a stale one.
 | Antigravity discovers workspace roots by walking up from the CWD to the repository root | Same source, Discovery Locations §1 | 2026-08-26 |
 | Antigravity supports hooks, as one `hooks.json` in the customisation root | Same skill, `docs/hooks.md` | 2026-08-26 |
 | No skill installed on this machine uses a `metadata` frontmatter key — 13 of 13, across four vendors | `grep -rl '^metadata:'` over every deployed `SKILL.md` and Antigravity's five builtins | 2026-08-26 |
+| **The Agent Skills frontmatter contract: six fields, `name` and `description` required, `metadata` "a map from string keys to string values"** | agentskills.io/specification, reproduced in 13.1 | 2026-08-26 |
+| **`name` MUST match the parent directory name**, and admits no consecutive hyphens | Same source, `name` field | 2026-08-26 |
+| The specification's own `metadata` example uses the keys `author` and `version`, and it recommends "making your key names reasonably unique to avoid accidental conflicts" | Same source, `metadata` field | 2026-08-26 |
+| The reference validator `skills-ref` is Python and "for demonstration purposes"; no machine-readable schema is published | github.com/agentskills/agentskills, `skills-ref` | 2026-08-26 |
 | Windows junctions require no elevation | Executed locally | 2026-08-23 |
 
 - **R14.2** A row in this table MUST name the artifact and version it was read

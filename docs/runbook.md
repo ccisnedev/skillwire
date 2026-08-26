@@ -571,20 +571,25 @@ forces now because deferring them is more expensive later.
       `README.md` names the PRD as the contract. **Recorded as
       `docs/adr/0006-the-unit-tuple-order.md` at stage 3, which carries its
       exit criterion.** Do not let two orders reach code.
-- [ ] **D3 — the `metadata` key vocabulary. DECISION.** R13.3 requires version
-      and provenance in the `metadata` map of the `SKILL.md` frontmatter and
-      prohibits a separate `skill.yaml`. The PRD names no keys. `version` is
-      load-bearing rather than decorative: it is a rendered column of
-      `skill list` (PRD §12.2, the columns paragraph). The key set must be fixed
-      before the first `SKILL.md` is written, and all three skills written
-      consistently in one pass. **Recorded as
-      `docs/adr/0011-the-skill-metadata-vocabulary.md` at stage 40, which
-      carries its exit criterion.**
-      ASSUMPTION: that the Agent Skills specification constrains `metadata` to a
-      string→string map is asserted by PRD §13, R13.3 and has not been checked
-      against the upstream specification in this evidence base; verify against
-      the published Agent Skills specification before choosing a key whose value
-      is not a string.
+- [ ] **~~D3 — the `metadata` key vocabulary.~~ Settled in the PRD by R13.6–R13.9;
+      read them, do not re-decide them.** Two keys, and only two: **`version`**
+      (SemVer, unprefixed) and **`skillwire-origin`** (the transporting
+      consumer, prefixed). `license` is the **top-level** frontmatter field, not
+      a `metadata` key (R13.7).
+
+      The specification was read on 2026-08-26 and is reproduced as PRD 13.1. It
+      does define `metadata` as "a map from string keys to string values", so
+      R13.3's premise holds and is no longer an assumption. Its own example uses
+      `author` and `version`, and it recommends "making your key names
+      reasonably unique to avoid accidental conflicts" — which is why exactly
+      one of our two keys carries a prefix and the other does not.
+
+      Two constraints from the same reading land on stages elsewhere: `name`
+      **must match the parent directory name** and may not contain consecutive
+      hyphens (both normative, both pinned at stage 23), and the reference
+      validator `skills-ref` is Python and "for demonstration purposes" with no
+      published schema — so stage 23 implements the table in Dart rather than
+      shelling out to anything.
 - [ ] **Dev dependencies.** Neither `skillwire` package declares any: there is
       no `dev_dependencies` key in `code/skillwire/pubspec.yaml` (12 lines) or
       `code/cli/pubspec.yaml` (21 lines). Add `test: ^1.31.0` and
@@ -1575,19 +1580,62 @@ PRD §12.2: `skill validate` is a Query, "Conformance of sources to the
 specification". It is the gate the three skills in stage group D pass through,
 so it is built before they land.
 
+**The specification is in PRD 13.1** — six fields, two required — read on
+2026-08-26 and dated in 14.1. Implement that table. Two facts about the
+ecosystem shape how:
+
+- The official validator, `skills-ref`, is **Python** and describes itself as
+  "for demonstration purposes", and **no machine-readable schema is published**.
+  There is nothing to consume and nothing to shell out to; a Dart
+  implementation of the table is the only option, which makes this stage real
+  work rather than a wrapper.
+- `name` **must match the parent directory name** — normative, and the citation
+  R7.5 needed. Its other constraints are equally normative and equally easy to
+  get wrong: 1–64 characters, lowercase alphanumerics and hyphens only, no
+  leading or trailing hyphen, and **no consecutive hyphens**.
+
 - [ ] Failing test first: `code/skillwire/test/skill_validate_test.dart`, group
-      `'R13.3 conformance'`.
-      - `'accepts a SKILL.md whose name equals the directory name'`.
-      - `'rejects a SKILL.md whose name differs from the directory name'`.
+      `'13.1 frontmatter conformance'`. One assertion per constraint, because a
+      validator tested in aggregate passes for the wrong reason:
+      - `name`: `'accepts a name equal to the directory name'`, `'rejects a name
+        that differs from the directory name'`, `'rejects uppercase'`,
+        `'rejects a leading hyphen'`, `'rejects a trailing hyphen'`,
+        `'rejects consecutive hyphens'`, `'rejects 65 characters'`,
+        `'accepts 64'`.
+      - `description`: `'rejects empty'`, `'rejects 1025 characters'`,
+        `'accepts 1024'`.
+      - `compatibility`: `'accepts 500 characters'`, `'rejects 501'`,
+        `'accepts its absence'`.
+      - `metadata`: `'rejects a non-string value'` — the specification says a
+        map from string keys to **string** values, so a YAML integer or nested
+        map is non-conforming and `version: 1.0` unquoted is the trap that
+        catches people.
       - `'rejects a directory with no SKILL.md'`.
       - `'rejects a directory containing skill.yaml'` — R13.3 prohibits it
-        outright; no `skill.yaml` exists in any of the three repositories today,
-        so this test guards against one appearing.
-      - `'requires a metadata map carrying version'` — PRD §12.2 makes `version`
-        a rendered `skill list` column, so it is load-bearing.
+        outright; none exists in any of the three repositories today, so this
+        test guards against one appearing.
       - `'accepts a CHANGELOG.md beside SKILL.md'` — permitted by R13.3.
       - `'reports every failure, not the first'`: a directory with two faults
         yields two findings.
+- [ ] Second group, `'R13.6 the metadata vocabulary'`.
+      - `'requires metadata.version'` and `'requires it to be SemVer'` — PRD
+        §12.2 makes `version` a rendered `skill list` column, so it is
+        load-bearing rather than decorative.
+      - `'requires metadata.skillwire-origin'`.
+      - `'rejects license inside metadata'` (R13.7): the top-level field is the
+        one place it belongs, and accepting both would recreate the
+        two-sources-of-truth problem R13.3 exists to prevent.
+      - `'ignores unknown metadata keys'`: the specification lets clients store
+        properties it does not define, so an unrecognised key is another tool's
+        business, not an error.
+- [ ] Third group, `'R13.9 compatibility is reported, never parsed'`.
+      - `'surfaces compatibility as an annotation when the target host is not
+        named in it'`: a skill declaring `Designed for Claude Code` deployed to
+        `codex` carries an annotation (§7.5) and keeps its verb.
+      - `'does not parse compatibility into a rule'`: the same skill deployed to
+        `codex` is **not** blocked. The field is prose by specification, and
+        reading structure into prose invents a grammar nobody wrote. The reader
+        decides; the tool only refuses to let the declaration go unseen (G5).
 - [ ] Implement `lib/src/validate/skill_validator.dart` over an injected map of
       relative path to bytes, so the validator itself is disk-free and the
       walker sits at the edge.
@@ -2283,28 +2331,31 @@ map today.
         string→string map. This is a real trap — `1.0` would parse as a double.
 - [ ] Record the vocabulary in
       `docs/adr/0011-the-skill-metadata-vocabulary.md` and mirror it into
-      `code/cli/assets/skills/README.md`. Proposed, and to be confirmed against
-      the Agent Skills specification's `metadata` guidance before it is written
-      into three files:
+      `code/cli/assets/skills/README.md`. Fixed by PRD R13.6 and R13.7; the
+      specification was read on 2026-08-26 and is reproduced as PRD 13.1.
 
-      | Key | Meaning |
-      |---|---|
-      | `version` | Semver of this artifact. Rendered by `skill list` |
-      | `origin` | The repository the skill came from |
-      | `originRef` | The commit or issue in that repository |
-      | `owner` | The consumer that ships it — `skillwire_cli` for these three |
-      | `license` | SPDX identifier |
+      | Where | Key | Value |
+      |---|---|---|
+      | frontmatter | `license` | The licence, as a **top-level field** (R13.7) — never inside `metadata`, which would recreate the two-sources-of-truth problem |
+      | `metadata` | `version` | SemVer. Unprefixed: it is the specification's own example key, and a catalogue reading `metadata.version` gets the right answer |
+      | `metadata` | `skillwire-origin` | The consumer that transports the skill — `skillwire_cli` for these three. Prefixed, per the specification's advice on key uniqueness, because the meaning is this project's own |
 
-      ASSUMPTION: these five key names. The specification is not in this
-      repository and was not read during evidence gathering; verify the
-      `metadata` map's documented conventions at agentskills.io before writing
-      them, per R14.1 and rule 5. If the specification reserves any of these
-      names for another meaning, rename ours rather than overloading them.
+      Nothing else. The earlier draft of this stage proposed `origin`,
+      `originRef` and `owner` as well; R13.6 cut them to two on the grounds that
+      R13.3 asks for two things. Provenance beyond the transporting consumer —
+      which commit, which issue — belongs in each skill's `CHANGELOG.md`, which
+      R13.3 permits precisely because the specification does not cover it.
+
+      **`skillwire-origin` is not ownership (R13.8).** Anyone can type it into a
+      file. It exists so a state 6 `block` can say who *appears* to have put a
+      directory there rather than only that nobody recorded it. Ownership is the
+      ledger, and nothing else.
 - [ ] Decide the starting version. These three carry none today. Recommended:
       `1.0.0` for each, on the grounds that they are entering a new package with
-      a new owner and no prior version was ever published; record the inquiry
-      provenance in `originRef` rather than reconstructing a number from
-      history. Their inquiry provenance commits are `e15d362` ("feat: draft
+      a new transporting consumer and no prior version was ever published;
+      record the inquiry provenance in each skill's `CHANGELOG.md` rather than
+      reconstructing a number from history. Their inquiry provenance commits are
+      `e15d362` ("feat: draft
       Kritik skill protocol"), `15a5c4d` ("feat(research): add standalone
       skill", issues #193/#194) and `3b6b9cc` ("rename skill
       Invoke-ExpertCouncil to legion", issue #191).
@@ -4347,8 +4398,9 @@ pre-upgrade clean.
 ## 14. Requirement traceability
 
 Every normative requirement id in the specification, and the stage that
-discharges it. PRD Draft 2 raised the count from 35 to **48**: R6.4, R6.5,
-R6.6, R6.7, R7.7-R7.9, R10.6, R11.5, R11.6, R12.7-R12.9 and R14.2 are new, and four of the six
+discharges it. PRD Draft 2 raised the count from 35 to **52**: R6.4, R6.5,
+R6.6, R6.7, R7.7-R7.9, R10.6, R11.5, R11.6, R12.7-R12.9, R13.6-R13.9 and R14.2
+are new, and four of the six
 gaps below closed as a result. **R12.0** is a normative naming rule with no phase row. Phase references point
 at the stage group that carries the phase.
 
@@ -4396,7 +4448,11 @@ at the stage group that carries the phase.
 | R12.9 | Stages 1, 15 | The package never uses `PreviewExecutor`; pinned by grep, not by discipline |
 | R13.1 | Stage 43 | `core` holds only cross-domain skills; stage 62 records why macss's five are `lifecycle` |
 | R13.2 | Stages 43, 62 | Per-consumer name tests plus the `uniq -d` gate; **cross-repository enforcement is not automatable today** |
-| R13.3 | Stages 23, 40, 41–43, 53, 62 | `metadata` map; no `skill.yaml` |
+| R13.3 | Stages 23, 40, 41–43, 53, 62 | `metadata` map; no `skill.yaml`. Its string→string premise is verified, not assumed — PRD 13.1 |
+| R13.6 | Stages 23, 40 | Exactly two keys: `version` bare, `skillwire-origin` prefixed |
+| R13.7 | Stages 23, 40 | `license` is the top-level field, never a `metadata` key |
+| R13.8 | Stages 13, 51, 59 | `skillwire-origin` is a courtesy, not ownership; the ledger is ownership |
+| R13.9 | Stage 23 | `compatibility` validated and annotated, never parsed |
 | R13.4 | Stages 53, 62 | Each consumer holds its own `assets/skills/modules/`; no copying between layers |
 | R13.5 | Stage 43 | Conformance to `SKILL.md` is sufficient |
 | R14.1 | Stages 16, 17, 61 | Every matrix path carries provenance; unverified paths throw |
