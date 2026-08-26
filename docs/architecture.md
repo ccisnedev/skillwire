@@ -4,35 +4,36 @@
 
 | Layer | Responsibility |
 |---|---|
-| `code/skillwire` | The library. Domain model, reconciliation, host matrix, ledger. Knows nothing about any particular CLI |
-| `code/cli` | The canonical consumer. Mounts the `skill` module over the library and ships its own skills as assets |
+| `code/skillwire` | The `skillwire` package. Domain model, reconciliation, host matrix, ledger. Knows nothing about any particular CLI |
+| `code/cli` | `skillwire_cli`, the canonical consumer. Mounts the `skill` module over the package and ships its own skills as assets |
 
 ```
-cli  →  skillwire
+skillwire_cli  →  skillwire package
 ```
 
-`cli` depends on `skillwire`. `skillwire` never depends on `cli`, and never on
-any other consumer. That direction is what makes the library reusable.
+`skillwire_cli` depends on the `skillwire` package. The package never depends on
+`skillwire_cli`, and never on any other consumer. That direction is what makes
+the package reusable.
 
 There is no `db`, `api` or `app` layer: this project has no data layer, no
 service and no interface beyond the terminal. The MACSS canon suggests those
 three because they are the most common, and permits adding or removing layers.
 
-## The library is shared, the CLI is one consumer among several
+## The package is shared, the CLI is one consumer among several
 
-`skillwire` is written to be embedded. The canonical `skillwire` CLI is the
-first consumer and the reference implementation, but `macss` and `inquiry`
-consume the same library and gain the same `skill` module.
+The `skillwire` package is written to be embedded. `skillwire_cli` is the first
+consumer and the reference implementation, but `macss` and `inquiry` consume the
+same package and gain the same `skill` module.
 
 ```mermaid
 graph TD
     subgraph consumers[Consumer CLIs]
-        SW["skillwire<br/><i>canonical</i>"]
+        SW["skillwire_cli<br/><i>canonical</i>"]
         MA["macss"]
         IN["inquiry"]
     end
 
-    LIB["skillwire<br/><i>library</i>"]
+    LIB["skillwire<br/><i>package</i>"]
     SDK["modular_cli_sdk"]
 
     subgraph hosts[AI hosts]
@@ -59,14 +60,15 @@ graph TD
 Each consumer carries its own skills, as assets of its own release:
 
 ```
-skillwire/  code/cli/assets/skills/modules/<module>/<skill>/
-macss/      code/cli/assets/skills/modules/<module>/<skill>/
-inquiry/    code/cli/assets/skills/modules/<module>/<skill>/
+skillwire_cli/  code/cli/assets/skills/modules/<module>/<skill>/
+macss/          code/cli/assets/skills/modules/<module>/<skill>/
+inquiry/        code/cli/assets/skills/modules/<module>/<skill>/
 ```
 
-The library never owns skills. It receives a materialised directory and resolves
-where it must land. A skill belongs to the release of the CLI that transports it,
-which is why it ships inside that CLI rather than in a shared location.
+The `skillwire` package never owns skills. It receives a materialised directory
+and resolves where it must land. A skill belongs to the release of the CLI that
+transports it, which is why it ships inside that CLI rather than in a shared
+location.
 
 Because all three deploy into the *same* host directories, the ledger records the
 owning consumer per deployment, and a deployment that would overwrite another
@@ -120,15 +122,15 @@ This matters because that middle layer is where a bug destroys a user's work.
 
 `modular_cli_sdk` distinguishes a `Query`, which reads and answers, from a
 `Command`, which changes something and must say what it would change first.
-Skillwire supplies the `Step`s; the SDK renders the plan, takes approval, and
-runs them.
+The `skillwire` package supplies the `Step`s; the SDK renders the plan, takes
+approval, and runs them.
 
 ```mermaid
 sequenceDiagram
     actor U as User
     participant CLI as Consumer CLI
     participant SDK as modular_cli_sdk
-    participant LIB as skillwire
+    participant LIB as skillwire package
     participant FS as Host directories
 
     U->>CLI: skill deploy --host=claude --scope=global --module=core --plan
@@ -178,4 +180,5 @@ See [ADR 0002](adr/0002-copy-not-link.md).
   file somebody else put there.
 - **Manifest.** Repository-level and committed, declaring what a repo wants
   deployed. Manifest is to ledger as `package.json` is to `package-lock.json`.
-- **Errors.** Typed hierarchy in `skillwire`, surfaced by the SDK's exit codes.
+- **Errors.** Typed hierarchy in the `skillwire` package, surfaced by the SDK's
+  exit codes.

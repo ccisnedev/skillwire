@@ -34,9 +34,9 @@ criterion; a phase is not done until that criterion is met.
 - [ ] Manifest
 - [ ] Idempotence and every `block` state covered by a test
 
-## P4 — The CLI
+## P4 — `skillwire_cli`
 
-- [ ] `skillwire` executable with the `sw` alias
+- [ ] The `skillwire` executable with its `sw` alias
 - [ ] Self-hosting: this repository deploys its own skills through it
 
 ## P5 — Adoption

@@ -8,7 +8,8 @@
 
 ## 1. Purpose
 
-Skillwire is the layer that lets an AI coding host execute capabilities it was
+The `skillwire` package is the layer that lets an AI coding host execute
+capabilities it was
 never trained on.
 
 An Agent Skill is a portable, standardised artifact: a folder with a `SKILL.md`.
@@ -16,7 +17,8 @@ A subagent is not. Hooks are less standardised still. Every host reads them from
 a different directory, at a different scope, and — for everything except skills —
 in a different file format.
 
-Skillwire absorbs those differences. You define a skill or a subagent **once**,
+The `skillwire` package absorbs those differences. You define a skill or a
+subagent **once**,
 and the package resolves where it must land, in which shape, for each host.
 
 > **On the name.** In Shadowrun, a *skillsoft* is a recorded skill and a
@@ -62,7 +64,7 @@ any other meaning.
 | **Reconciliation** | Making a host's directories match a desired set of materialised artifacts |
 | **Ledger** | Machine-local record of what *is* deployed |
 | **Manifest** | Repository-level, committed declaration of what a repo *wants* deployed |
-| **Consumer** | A CLI that embeds the Skillwire package: `skillwire`, `macss`, `inquiry` |
+| **Consumer** | A CLI that embeds the `skillwire` package: `skillwire_cli`, `macss`, `inquiry` |
 
 ---
 
@@ -83,8 +85,8 @@ any other meaning.
 
 | Excluded | Reason |
 |---|---|
-| MCP server management | Project philosophy: a subagent drives a CLI, not an MCP. A CLI is a versioned artifact with a stable contract and no process lifecycle; a subagent driving a Skillwire-family CLI also inherits its `--plan`/`--apply` guard rails |
-| A skill catalogue, search, or marketplace UI | `npx skills` covers discovery. Skillwire does not compete with it |
+| MCP server management | Project philosophy: a subagent drives a CLI, not an MCP. A CLI is a versioned artifact with a stable contract and no process lifecycle; a subagent driving a consumer CLI also inherits its `--plan`/`--apply` guard rails |
+| A skill catalogue, search, or marketplace UI | `npx skills` covers discovery. The `skillwire` package does not compete with it. **Contested — see issue #1** |
 | Support for dozens of hosts | Five hosts, in a data table. Adding a host must be data, not code |
 | Exotic source resolution (GitLab, SSH, archives, download URLs) | Local path and git are sufficient |
 | A "dev mode" that links to a working copy | Solved one layer down: `modular_cli_sdk` CLIs run from source with `dart run`, so the working copy *is* the asset |
@@ -98,7 +100,7 @@ any other meaning.
 |---|---|---|
 | G1 | One definition, many hosts | A skill authored once deploys to all five hosts with no per-host source edits |
 | G2 | Nothing implicit | No default host, no default scope, no default artifact set |
-| G3 | Nothing destroyed | No operation ever removes an artifact that Skillwire did not deploy |
+| G3 | Nothing destroyed | No operation ever removes an artifact that the acting consumer did not deploy |
 | G4 | Reproducible | Two machines given the same manifest reach the same deployed state |
 | G5 | Honest about the ecosystem | Cross-host visibility and per-host limitations are reported, never hidden |
 | G6 | Shared by consumers | `macss` and `inquiry` deploy their own skills through the same package with no forked logic |
@@ -122,8 +124,8 @@ any other meaning.
 - **R6.1** Codex's global path MUST be resolved from the `CODEX_HOME` environment
   variable, falling back to `~/.codex` only when it is unset. Hardcoding
   `~/.codex` is non-conforming.
-- **R6.2** Where a host lists several directories, Skillwire MUST deploy to
-  exactly one of them, and that choice MUST be recorded in the ledger.
+- **R6.2** Where a host lists several directories, the `skillwire` package MUST
+  resolve to exactly one of them, and that choice MUST be recorded in the ledger.
 - **R6.3** The host matrix MUST live in a data file, not in code. Adding a host
   is a data change.
 
@@ -144,15 +146,16 @@ This table is **incomplete and blocks subagent support only**. Skills are unaffe
 Copilot. `~/.agents/plugins/` is used by Codex for its plugin marketplace.
 
 Deploying into `.agents/` reaches three hosts with one copy, at the cost of
-losing per-host variation, since all three read the same bytes. Skillwire MUST
-expose this as an explicit destination, never as a hidden optimisation.
+losing per-host variation, since all three read the same bytes. The `skillwire`
+package MUST expose this as an explicit destination, never as a hidden optimisation.
 
 ---
 
 ## 7. Cross-host visibility
 
 Some hosts read other hosts' directories. This is a property of the ecosystem,
-not something Skillwire can change, and it has consequences a user cannot infer.
+not something the `skillwire` package can change, and it has consequences a user
+cannot infer.
 
 ### 7.1 The graph
 
@@ -198,7 +201,8 @@ a same-named skill**, because OpenCode reads `~/.claude/skills/` and cannot be
 prevented from doing so.
 
 At `repo` scope this is avoidable: each host has a private directory, and
-Skillwire can deploy to `.opencode/skills/` instead of `.claude/skills/`.
+the `skillwire` package can resolve to `.opencode/skills/` instead of
+`.claude/skills/`.
 
 **R7.6** This asymmetry MUST be stated by the tool when relevant, never silently
 worked around.
@@ -228,8 +232,8 @@ one engine.
 
 ## 9. Deployment mechanism: copy
 
-**R9.1** Skillwire deploys by **copying** the materialised directory into each
-host's directory, independently per host.
+**R9.1** The `skillwire` package deploys by **copying** the materialised
+directory into each host's directory, independently per host.
 
 Two alternatives were considered and rejected; the rationale is recorded in
 ADR 0002. In summary:
@@ -292,15 +296,15 @@ Two files, two different questions, following the `package.json` /
 | Answers | what this repo *wants* deployed | what *is* deployed on this machine |
 | Location | repository root | user state directory |
 | Committed | **yes** | no |
-| Written by | a human, or a Skillwire command | Skillwire only |
+| Written by | a human, or a consumer CLI | a consumer CLI only |
 
-- **R11.1** Skillwire MUST NOT read or write `~/.agents/.skill-lock.json`. That
-  file belongs to `npx skills`, whose implementation **deletes it outright** when
+- **R11.1** The `skillwire` package MUST NOT read or write
+  `~/.agents/.skill-lock.json`. That file belongs to `npx skills`, whose implementation **deletes it outright** when
   it encounters a version lower than its current one. Sharing it would mean
   losing the ledger on an unrelated tool's upgrade.
 - **R11.2** The ledger key MUST be the full tuple of 10.1. `npx skills` keys by
-  skill name alone and records no per-host state; that shape cannot express
-  Skillwire's model.
+  skill name alone and records no per-host state; that shape cannot express the
+  model of the `skillwire` package.
 - **R11.3** The ledger MUST record, per unit: source type, source reference,
   resolved destination path, content hash, owning consumer CLI, artifact version,
   and timestamps.
@@ -313,13 +317,19 @@ Two files, two different questions, following the `package.json` /
 
 ### 12.1 Identity
 
-| | Value |
-|---|---|
-| Dart package, library | `skillwire` |
-| Dart package, CLI | `skillwire_cli` |
-| Executable | `skillwire` |
-| Alias | `sw` |
-| Module mounted in consumers | `skill`, singular |
+| | Value | Written in prose as |
+|---|---|---|
+| Dart package, library | `skillwire` | the `skillwire` package |
+| Dart package, CLI | `skillwire_cli` | `skillwire_cli` |
+| Executable | `skillwire` | the `skillwire` executable |
+| Alias | `sw` | the `sw` alias |
+| Module mounted in consumers | `skill`, singular | the `skill` module |
+
+**R12.0** One name identifies one thing. The word `skillwire` identifies three,
+so every mention in prose MUST carry the qualifier in the third column; a bare
+`skillwire` in prose is non-conforming. *Skillwire* capitalised names the
+project and MUST NOT be the subject of a requirement — a requirement names the
+`skillwire` package, `skillwire_cli`, or the consumer. Recorded in ADR 0004.
 
 **R12.1** The module is named `skill`, singular, in every consumer. `macss`
 already ships `skill list|deploy|clean` for its lifecycle skills; those routes
@@ -361,7 +371,8 @@ destination without having been targeted.
 - **R12.3** `--scope=repo` outside a repository MUST fail explicitly. It MUST NOT
   fall back to `global`.
 - **R12.4** Every Command MUST require `--plan` or `--apply`. `modular_cli_sdk`
-  enforces this and Skillwire MUST NOT bypass it.
+  enforces this, and neither the `skillwire` package nor any consumer may bypass
+  it.
 
 ### 12.4 Steps
 
@@ -370,8 +381,8 @@ destination without having been targeted.
   `perform()` does the work. The two are separate methods, never one method
   behind a dry-run flag — a flag threaded through the work leaves nothing holding
   the switched-off pass and the real one to the same behaviour.
-- **R12.6** Skillwire MUST NOT define a plan type of its own. The plan is the
-  ordered list of Steps, and `modular_cli_sdk` renders and approves it.
+- **R12.6** The `skillwire` package MUST NOT define a plan type of its own. The
+  plan is the ordered list of Steps, and `modular_cli_sdk` renders and approves it.
 
 ---
 
@@ -446,7 +457,7 @@ CLIs or their official documentation — before the corresponding feature is bui
 | **P1** | Domain model and pure reconciliation | Every row of 10.2 unit-tested with no filesystem |
 | **P2** | Host matrix, host detection, visibility graph | `skill list` and `skill doctor` correct on a real machine |
 | **P3** | `skill deploy` / `skill remove`, ledger, manifest | Idempotent; every `block` state reproducible in a test |
-| **P4** | `skillwire` CLI with `sw` alias | Self-hosting: this repo's own skills deploy through it |
+| **P4** | `skillwire_cli`: the `skillwire` executable and its `sw` alias | Self-hosting: this repo's own skills deploy through it |
 | **P5** | Adoption by `macss` and `inquiry` | Both consume the package; no forked deployment logic remains |
 | **P6** | Subagents | Only after Q1 and Q2 are closed |
 
@@ -461,7 +472,7 @@ schema simultaneously.
 
 The five rules that override any later convenience:
 
-1. **Never destroy what Skillwire did not deploy.** — G3, R10.3
+1. **Never destroy what the acting consumer did not deploy.** — G3, R10.3
 2. **Never act implicitly.** No default host, scope, or artifact set. — G2, R12.2
 3. **Never bypass plan/apply.** — R12.4
 4. **Never let reconciliation touch the filesystem.** Pure function, I/O at the

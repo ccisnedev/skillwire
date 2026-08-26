@@ -13,17 +13,21 @@ their rationale belong in `docs/adr/`.
 
 ### Added
 
-- Specification of Skillwire in `docs/PRD.md`: host matrix, cross-host
-  visibility graph, reconciliation states, ledger and manifest, CLI contract.
+- Specification of the `skillwire` package in `docs/PRD.md`: host matrix,
+  cross-host visibility graph, reconciliation states, ledger and manifest, CLI contract.
 - `docs/architecture.md`: two layers, the materialisation/reconciliation seam,
   and how other consumer CLIs embed the library.
 - ADR 0002 — deployment is by copy, not by link.
 - ADR 0003 — the package is named `skillwire`.
-- Skeletons for the `skillwire` library and the `skillwire_cli` executable.
+- ADR 0004 — how the word `skillwire` is written, now that it names the package,
+  the CLI and the executable.
+- Skeletons for the `skillwire` package and `skillwire_cli`.
 
 ### Changed
 
 - Replaced the scaffolded `api`, `app`, `db` and `infra` layers with the two
-  this project actually has: `skillwire` and `cli`.
+  this project actually has: `code/skillwire` and `code/cli`.
+- Every mention of `skillwire` in the documentation now states which of the three
+  things it means: the package, `skillwire_cli`, or the executable.
 
 ### Fixed
