@@ -3,10 +3,6 @@ import 'package:modular_cli_sdk/modular_cli_sdk.dart';
 import 'package:path/path.dart' as p;
 import 'package:skillwire/skillwire.dart';
 
-import '../../../src/catalogue.dart';
-import '../../../src/planner.dart';
-import '../../../src/scan.dart';
-import '../../../src/workspace.dart';
 
 // ─── validate ───────────────────────────────────────────────────────────────
 
@@ -117,6 +113,7 @@ class SkillDoctorInput extends Input {
 
 class SkillDoctorOutput extends Output {
   SkillDoctorOutput({
+    required this.consumer,
     required this.detected,
     required this.undetected,
     required this.ledgerPath,
@@ -125,6 +122,11 @@ class SkillDoctorOutput extends Output {
     required this.diagnosis,
     required this.provenance,
   });
+
+  /// The CLI this report speaks for. Doctor says "deployed by macss" or
+  /// "deployed by skillwire_cli" because a shared ledger holds rows for all of
+  /// them, and a count with no owner beside it means nothing.
+  final String consumer;
 
   final List<String> detected;
   final List<String> undetected;
@@ -138,6 +140,7 @@ class SkillDoctorOutput extends Output {
 
   @override
   Map<String, dynamic> toJson() => {
+    'consumer': consumer,
     'detectedHosts': detected,
     'undetectedHosts': undetected,
     'ledger': {'path': ledgerPath, 'exists': ledgerExists},
@@ -301,7 +304,7 @@ class SkillDoctorOutput extends Output {
   }
 
   String _label(LedgerClaim claim) => switch (claim) {
-    LedgerClaim.intact => 'Deployed by $actingConsumer, intact',
+    LedgerClaim.intact => 'Deployed by $consumer, intact',
     LedgerClaim.missing => 'Recorded, but gone from the destination',
     LedgerClaim.drifted => 'Modified since deployment',
     LedgerClaim.foreign => 'Deployed by another consumer',
@@ -315,7 +318,14 @@ class SkillDoctorOutput extends Output {
 /// whether anything is here that the ledger does not know about.** Everything it
 /// reports follows from that one question, and it creates nothing to find out.
 class SkillDoctorCommand implements Query<SkillDoctorInput, SkillDoctorOutput> {
-  SkillDoctorCommand(this.input, {required this.workspace});
+  SkillDoctorCommand(
+    this.input, {
+    required this.consumer,
+    required this.workspace,
+  });
+
+  /// The CLI on whose behalf this run acts (see `buildSkillModule`).
+  final String consumer;
 
   @override
   final SkillDoctorInput input;
@@ -333,6 +343,7 @@ class SkillDoctorCommand implements Query<SkillDoctorInput, SkillDoctorOutput> {
         SkillValidator(reservedNames: workspace.matrix.reservedNames);
 
     return SkillDoctorOutput(
+      consumer: consumer,
       detected: detected.toList()..sort(),
       undetected: [
         for (final id in workspace.matrix.hostIds)
@@ -343,7 +354,7 @@ class SkillDoctorCommand implements Query<SkillDoctorInput, SkillDoctorOutput> {
       repositoryRoot: workspace.repositoryRoot,
       diagnosis: diagnose(
         ledger: ledger,
-        actingConsumer: actingConsumer,
+        actingConsumer: consumer,
         destinationHashes: destinationHashes(ledger),
         found: scanHosts(workspace: workspace, validator: validator),
       ),

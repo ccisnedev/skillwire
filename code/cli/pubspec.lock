@@ -89,6 +89,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.7"
+  datajack:
+    dependency: "direct main"
+    description:
+      path: "../datajack"
+      relative: true
+    source: path
+    version: "0.1.0"
   file:
     dependency: transitive
     description:
@@ -271,7 +278,7 @@ packages:
       path: "../skillwire"
       relative: true
     source: path
-    version: "0.1.0"
+    version: "0.2.0"
   source_map_stack_trace:
     dependency: transitive
     description:

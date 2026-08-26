@@ -1,7 +1,10 @@
 import 'dart:io' as io;
 
 import 'package:path/path.dart' as p;
-import 'package:skillwire/skillwire.dart';
+
+import '../hosts/host_matrix.dart';
+import '../hosts/resolution.dart';
+import '../io/filesystem.dart';
 
 /// Everything the CLI needs to know about the machine it is running on,
 /// gathered once so that no command reads the environment for itself.

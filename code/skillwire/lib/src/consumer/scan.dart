@@ -1,9 +1,16 @@
 import 'dart:io' as io;
 
 import 'package:path/path.dart' as p;
-import 'package:skillwire/skillwire.dart';
 
+import '../diagnose/diagnosis.dart';
+import '../domain/scope.dart';
+import '../errors.dart';
+import '../hash/content_hash.dart';
+import '../io/filesystem.dart';
+import '../ledger/ledger.dart';
+import '../validate/skill_validator.dart';
 import 'workspace.dart';
+
 
 /// Walk every directory a detected host reads, and report what is in them.
 ///

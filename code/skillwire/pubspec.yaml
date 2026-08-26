@@ -2,7 +2,7 @@ name: skillwire
 description: >-
   Deploys agent skills and subagents into AI coding hosts, resolving the path
   and file format each host expects. The infrastructure layer, not the payload.
-version: 0.1.0
+version: 0.2.0
 repository: https://github.com/ccisnedev/skillwire
 issue_tracker: https://github.com/ccisnedev/skillwire/issues
 

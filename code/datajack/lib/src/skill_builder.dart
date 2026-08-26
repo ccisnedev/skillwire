@@ -8,9 +8,7 @@ library;
 import 'package:modular_cli_sdk/modular_cli_sdk.dart';
 import 'package:skillwire/skillwire.dart';
 
-import '../../src/catalogue.dart';
-import '../../src/workspace.dart';
-import '../../src/errors.dart';
+import 'errors.dart';
 import 'commands/deploy.dart';
 import 'commands/inspect.dart';
 import 'commands/list.dart';
@@ -24,8 +22,14 @@ import 'commands/list.dart';
 /// Every route passes `params:` — `const []` at minimum. A Query registered
 /// with `params: null` silently accepts `--plan`, because the SDK short-circuits
 /// its own argument check when a command declares no contract.
+/// [consumer] is the CLI on whose behalf this module acts. It is written into
+/// every ledger row the module creates, and it is the only thing that makes PRD
+/// 10.2 state 5 — "deployed by a different consumer" — answerable for the
+/// others. A parameter rather than a constant is what lets one module serve
+/// `skillwire_cli`, `macss` and `inquiry` without a fork.
 void buildSkillModule(
   ModuleBuilder m, {
+  required String consumer,
   required Workspace workspace,
   required Catalogue catalogue,
 }) {
@@ -33,6 +37,7 @@ void buildSkillModule(
     'list',
     (req) => translating(() => SkillListCommand(
       SkillListInput.fromCliRequest(req, catalogue),
+      consumer: consumer,
       workspace: workspace,
       catalogue: catalogue,
     )),
@@ -44,6 +49,7 @@ void buildSkillModule(
     'deploy',
     (req) => translating(() => SkillChangeCommand(
       SkillChangeInput.fromCliRequest(req, catalogue),
+      consumer: consumer,
       workspace: workspace,
       catalogue: catalogue,
       operation: Operation.deploy,
@@ -56,6 +62,7 @@ void buildSkillModule(
     'remove',
     (req) => translating(() => SkillChangeCommand(
       SkillChangeInput.fromCliRequest(req, catalogue),
+      consumer: consumer,
       workspace: workspace,
       catalogue: catalogue,
       operation: Operation.remove,
@@ -69,6 +76,7 @@ void buildSkillModule(
     'doctor',
     (req) => SkillDoctorCommand(
       SkillDoctorInput.fromCliRequest(req),
+      consumer: consumer,
       workspace: workspace,
     ),
     description: 'Report what is deployed, who owns it, and what has drifted',

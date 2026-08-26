@@ -2,7 +2,9 @@ import 'dart:io' as io;
 import 'dart:typed_data';
 
 import 'package:path/path.dart' as p;
-import 'package:skillwire/skillwire.dart';
+
+import '../io/filesystem.dart';
+import '../validate/skill_validator.dart';
 
 /// One skill this release transports, read from the asset tree.
 class ShippedSkill {

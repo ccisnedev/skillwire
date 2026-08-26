@@ -1,12 +1,15 @@
 import 'package:path/path.dart' as p;
-import 'package:skillwire/skillwire.dart';
 
+import '../domain/kind.dart';
+import '../domain/scope.dart';
+import '../domain/unit.dart';
+import '../hash/content_hash.dart';
+import '../io/filesystem.dart' as io;
+import '../ledger/ledger.dart';
+import '../reconcile/state.dart';
 import 'catalogue.dart';
 import 'workspace.dart';
 
-/// The consumer that acts. Written into every ledger row this CLI creates, and
-/// the only thing that makes PRD 10.2 state 5 answerable for the others.
-const actingConsumer = 'skillwire_cli';
 
 /// What a run was asked to touch.
 ///
@@ -60,7 +63,7 @@ class Planner {
   /// Read what is at each destination. The "one read before".
   Map<Unit, Observed> observe(Map<Unit, Desired> desired, Ledger ledger) => {
     for (final e in desired.entries)
-      e.key: observeUnit(
+      e.key: io.observe(
         destination: e.value.destination,
         unit: e.key,
         ledger: ledger,
@@ -141,5 +144,4 @@ class Planner {
   }
 }
 
-/// Alias so this file reads as prose rather than as a name collision.
-final observeUnit = observe;
+

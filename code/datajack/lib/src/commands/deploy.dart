@@ -2,9 +2,6 @@ import 'package:cli_router/cli_router.dart';
 import 'package:modular_cli_sdk/modular_cli_sdk.dart';
 import 'package:skillwire/skillwire.dart';
 
-import '../../../src/catalogue.dart';
-import '../../../src/planner.dart';
-import '../../../src/workspace.dart';
 import '../selection_params.dart';
 
 class SkillChangeInput extends Input {
@@ -85,10 +82,14 @@ class SkillChangeOutput extends Output {
 class SkillChangeCommand implements Command<SkillChangeInput, SkillChangeOutput> {
   SkillChangeCommand(
     this.input, {
+    required this.consumer,
     required this.workspace,
     required this.catalogue,
     required this.operation,
   });
+
+  /// The CLI on whose behalf this run acts (see `buildSkillModule`).
+  final String consumer;
 
   @override
   final SkillChangeInput input;
@@ -140,7 +141,7 @@ class SkillChangeCommand implements Command<SkillChangeInput, SkillChangeOutput>
       operation: operation,
       observed: planner.observe(desired, ledger),
       desired: desired,
-      actingConsumer: actingConsumer,
+      actingConsumer: consumer,
       force: input.force,
       annotations: planner.annotations(
         desired,
@@ -149,7 +150,7 @@ class SkillChangeCommand implements Command<SkillChangeInput, SkillChangeOutput>
       ),
       sink: FilesystemSink(
         ledgerFile: workspace.ledgerFile,
-        actingConsumer: actingConsumer,
+        actingConsumer: consumer,
         sourceType: SourceType.local,
         sourceReference: workspace.assetsRoot,
         artifactVersions: catalogue.versions,
@@ -162,14 +163,23 @@ class SkillChangeCommand implements Command<SkillChangeInput, SkillChangeOutput>
     // rendered, blocks and all, because the whole point of a plan is to show
     // what is in the way. A blocked step performs nothing even if it is run.
     if (input.applying && !_plan!.isApplicable) {
+      // The reasons are carried in the message rather than left to the plan
+      // rendering. Throwing from steps() means nothing was rendered, so a
+      // message saying "see the blocks above" would point at an empty screen.
+      final reasons = [
+        for (final b in _plan!.blocked)
+          '  ${b.unit.artifact} -> ${b.destination}\n    ${b.reason}',
+      ].join('\n');
+
       throw CommandException(
         code: 'plan_contains_blocks',
         message:
-            'This plan would leave ${_plan!.blocked.length} unit(s) untouched, and '
-            'refuses to apply. Read the blocks above. Pass --force to apply the '
-            'rest; --force never overwrites a blocked unit, and on a destination '
-            'no consumer deployed whose contents already match, it adopts it '
-            'into the ledger without writing (R10.6).',
+            'This plan would leave ${_plan!.blocked.length} unit(s) untouched, '
+            'and refuses to apply:\n\n$reasons\n\n'
+            'Run again with --plan to see the whole plan. Pass --force to apply '
+            'the rest; --force never overwrites a blocked unit, and on a '
+            'destination no consumer deployed whose contents already match, it '
+            'adopts it into the ledger without writing (R10.6).',
         exitCode: ExitCode.conflict,
       );
     }

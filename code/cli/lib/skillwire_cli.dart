@@ -10,14 +10,13 @@ import 'dart:io' as io;
 import 'package:modular_cli_sdk/modular_cli_sdk.dart';
 import 'package:skillwire/skillwire.dart';
 
-import 'modules/skill/skill_builder.dart';
-import 'modules/skill/version.dart';
-import 'src/catalogue.dart';
-import 'src/workspace.dart';
+import 'package:datajack/datajack.dart';
 
-export 'src/catalogue.dart' show Catalogue, ShippedSkill;
-export 'src/planner.dart' show Planner, Selection, actingConsumer;
-export 'src/workspace.dart' show Workspace;
+import 'modules/skill/version.dart';
+
+/// The name this CLI writes into every ledger row it creates, and the name the
+/// other two consumers see in a `block` when they meet one of its artifacts.
+const consumerName = 'skillwire_cli';
 
 /// The SDK routes every help request itself. Only `--version` needs
 /// normalising, since it has no version convention of its own.
@@ -50,7 +49,15 @@ Future<int> runSkillwire(
   // R12.1 — the module is `skill`, singular, in every consumer. Two modules
   // differing by a single `s` are prohibited, and this CLI is the reference for
   // the other two.
-  cli.module('skill', (m) => buildSkillModule(m, workspace: ws, catalogue: cat));
+  cli.module(
+    'skill',
+    (m) => buildSkillModule(
+      m,
+      consumer: consumerName,
+      workspace: ws,
+      catalogue: cat,
+    ),
+  );
   cli.module('', (m) => buildVersionRoute(m));
 
   return cli.run(

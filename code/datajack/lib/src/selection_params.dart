@@ -2,8 +2,6 @@ import 'package:cli_router/cli_router.dart';
 import 'package:modular_cli_sdk/modular_cli_sdk.dart';
 import 'package:skillwire/skillwire.dart';
 
-import '../../src/catalogue.dart';
-import '../../src/planner.dart';
 
 /// The parameter contract every route in this module shares, and the rules that
 /// make R12.2 true rather than aspirational.

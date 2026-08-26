@@ -2,9 +2,6 @@ import 'package:cli_router/cli_router.dart';
 import 'package:modular_cli_sdk/modular_cli_sdk.dart';
 import 'package:skillwire/skillwire.dart';
 
-import '../../../src/catalogue.dart';
-import '../../../src/planner.dart';
-import '../../../src/workspace.dart';
 import '../selection_params.dart';
 
 class SkillListInput extends Input {
@@ -117,7 +114,15 @@ class SkillListOutput extends Output {
 /// A Query: it reads and answers, and rejects `--plan` / `--apply`. It builds a
 /// plan only to read the previews, which is why it hands the reconciler no sink.
 class SkillListCommand implements Query<SkillListInput, SkillListOutput> {
-  SkillListCommand(this.input, {required this.workspace, required this.catalogue});
+  SkillListCommand(
+    this.input, {
+    required this.consumer,
+    required this.workspace,
+    required this.catalogue,
+  });
+
+  /// The CLI on whose behalf this run acts (see `buildSkillModule`).
+  final String consumer;
 
   @override
   final SkillListInput input;
@@ -143,7 +148,7 @@ class SkillListCommand implements Query<SkillListInput, SkillListOutput> {
       operation: Operation.deploy,
       observed: planner.observe(desired, ledger),
       desired: desired,
-      actingConsumer: actingConsumer,
+      actingConsumer: consumer,
       annotations: annotations,
     );
 

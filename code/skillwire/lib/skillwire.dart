@@ -10,6 +10,11 @@ library;
 
 export 'src/hash/content_hash.dart' show contentHash;
 
+export 'src/consumer/catalogue.dart' show Catalogue, ShippedSkill;
+export 'src/consumer/planner.dart' show Planner, Selection;
+export 'src/consumer/scan.dart' show destinationHashes, scanHosts;
+export 'src/consumer/workspace.dart' show Workspace;
+
 export 'src/diagnose/diagnosis.dart'
     show
         ClaimedUnit,

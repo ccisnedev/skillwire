@@ -186,7 +186,7 @@ void main() {
         host: 'claude',
         scope: Scope.global,
       )]!;
-      expect(row.owningConsumer, actingConsumer);
+      expect(row.owningConsumer, consumerName);
       expect(row.artifactVersion, '2.1.0');
       expect(row.resolvedDestinationPath, p.join(claudeSkills(), 'kritik'));
     });
