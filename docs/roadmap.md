@@ -12,6 +12,7 @@ criterion; a phase is not done until that criterion is met.
 - [x] Ledger and manifest split defined
 - [x] CLI contract defined
 - [x] Name decided and recorded (ADR 0003)
+- [x] How the name is written decided and recorded (ADR 0004)
 - [ ] Reviewed
 
 ## P1 — Domain and reconciliation
@@ -41,8 +42,8 @@ criterion; a phase is not done until that criterion is met.
 
 ## P5 — Adoption
 
-- [ ] `macss` consumes the package
-- [ ] `inquiry` consumes the package
+- [ ] `macss` consumes the `skillwire` package
+- [ ] `inquiry` consumes the `skillwire` package
 - [ ] No forked deployment logic left in either
 
 ## P6 — Subagents

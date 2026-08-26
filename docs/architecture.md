@@ -5,7 +5,7 @@
 | Layer | Responsibility |
 |---|---|
 | `code/skillwire` | The `skillwire` package. Domain model, reconciliation, host matrix, ledger. Knows nothing about any particular CLI |
-| `code/cli` | `skillwire_cli`, the canonical consumer. Mounts the `skill` module over the package and ships its own skills as assets |
+| `code/cli` | `skillwire_cli`, the canonical consumer. Mounts the `skill` module over the `skillwire` package and ships its own skills as assets |
 
 ```
 skillwire_cli  →  skillwire package
@@ -57,7 +57,8 @@ graph TD
     LIB --> CP
 ```
 
-Each consumer carries its own skills, as assets of its own release:
+Each consumer carries its own skills, as assets of its own release. Left, the
+consumer; right, where its skills live inside that consumer's repository:
 
 ```
 skillwire_cli/  code/cli/assets/skills/modules/<module>/<skill>/
@@ -76,7 +77,8 @@ consumer's artifact is planned as `block`.
 
 ## The seam
 
-The library is built around one separation, and everything else follows from it.
+The `skillwire` package is built around one separation, and everything else
+follows from it.
 
 ```mermaid
 flowchart LR
@@ -94,7 +96,7 @@ generated skill is built by its generator; a subagent is transformed into the
 host's format.
 
 **Reconciliation** makes a host's directories match a desired set of
-materialised directories. It does not know, and must not know, how any of them
+materialised artifacts. It does not know, and must not know, how any of them
 came to exist.
 
 That is what lets one engine serve static skills, skills generated at runtime by

@@ -9,8 +9,7 @@
 ## 1. Purpose
 
 The `skillwire` package is the layer that lets an AI coding host execute
-capabilities it was
-never trained on.
+capabilities it was never trained on.
 
 An Agent Skill is a portable, standardised artifact: a folder with a `SKILL.md`.
 A subagent is not. Hooks are less standardised still. Every host reads them from
@@ -18,13 +17,13 @@ a different directory, at a different scope, and — for everything except skill
 in a different file format.
 
 The `skillwire` package absorbs those differences. You define a skill or a
-subagent **once**,
-and the package resolves where it must land, in which shape, for each host.
+subagent **once**, and the package resolves where it must land, in which shape,
+for each host.
 
 > **On the name.** In Shadowrun, a *skillsoft* is a recorded skill and a
 > *skillwire* is the neuro-muscular system that lets a body run softs it never
 > learned. The wire is infrastructure; the softs are payload, and they come in
-> kinds. This package is the wire.
+> kinds. The `skillwire` package is the wire.
 
 ---
 
@@ -47,7 +46,8 @@ between releases, and is currently re-derived by hand every time.
 ## 3. Glossary
 
 Terms are used in this document with exactly these meanings, and nowhere with
-any other meaning.
+any other meaning. The three things the word `skillwire` names are separated in
+12.1 and governed by R12.0.
 
 | Term | Meaning |
 |---|---|
@@ -65,6 +65,11 @@ any other meaning.
 | **Ledger** | Machine-local record of what *is* deployed |
 | **Manifest** | Repository-level, committed declaration of what a repo *wants* deployed |
 | **Consumer** | A CLI that embeds the `skillwire` package: `skillwire_cli`, `macss`, `inquiry` |
+| **Acting consumer** | The consumer executing the operation at hand. Ownership in the ledger, and every rule about what may be destroyed, are relative to it — never to the `skillwire` package, which all consumers share |
+| **Detected host** | A host whose directories are present on this machine, whether or not it was named with `--host` |
+| **Unit** | One tuple `(artifact, kind, host, scope, subagent?)`: the atom of reconciliation, defined in 10.1 |
+| **Source** | Where an artifact comes from before materialisation: a local path or a git reference |
+| **Drift** | A destination whose content no longer matches what the ledger records for it |
 
 ---
 
@@ -90,7 +95,7 @@ any other meaning.
 | Support for dozens of hosts | Five hosts, in a data table. Adding a host must be data, not code |
 | Exotic source resolution (GitLab, SSH, archives, download URLs) | Local path and git are sufficient |
 | A "dev mode" that links to a working copy | Solved one layer down: `modular_cli_sdk` CLIs run from source with `dart run`, so the working copy *is* the asset |
-| Runtime skill generation | The package deploys what it is given. Generation belongs to the consumer CLI, upstream of the seam in section 8 |
+| Runtime skill generation | The `skillwire` package deploys what it is given. Generation belongs to the consumer, upstream of the seam in section 8 |
 
 ---
 
@@ -103,7 +108,7 @@ any other meaning.
 | G3 | Nothing destroyed | No operation ever removes an artifact that the acting consumer did not deploy |
 | G4 | Reproducible | Two machines given the same manifest reach the same deployed state |
 | G5 | Honest about the ecosystem | Cross-host visibility and per-host limitations are reported, never hidden |
-| G6 | Shared by consumers | `macss` and `inquiry` deploy their own skills through the same package with no forked logic |
+| G6 | Shared by consumers | `macss` and `inquiry` deploy their own skills through the same `skillwire` package with no forked logic |
 
 ---
 
@@ -204,8 +209,8 @@ At `repo` scope this is avoidable: each host has a private directory, and
 the `skillwire` package can resolve to `.opencode/skills/` instead of
 `.claude/skills/`.
 
-**R7.6** This asymmetry MUST be stated by the tool when relevant, never silently
-worked around.
+**R7.6** The acting consumer MUST state this asymmetry in the plan when it is
+relevant, never silently work around it.
 
 ---
 
@@ -240,7 +245,7 @@ ADR 0002. In summary:
 
 | Model | Rejected because |
 |---|---|
-| Link directly to the consumer CLI's asset directory | That directory is replaced when the CLI is upgraded. An upgrade would mutate a host's behaviour with no deployment having occurred |
+| Link directly to the consumer's asset directory | That directory is replaced when the CLI is upgraded. An upgrade would mutate a host's behaviour with no deployment having occurred |
 | One canonical copy, links from each host | Forbids per-host variation. Subagents *require* per-host transformation, so this model cannot support them |
 
 Copy carries one cost, accepted deliberately: **a copy has no intrinsic
@@ -267,11 +272,11 @@ Every unit resolves to exactly one of these. The verb is what appears in the pla
 | # | State found at destination | Verb | Behaviour |
 |---|---|---|---|
 | 1 | Nothing | `create` | Deploy |
-| 2 | Ours, content hash matches | `keep` | No action |
-| 3 | Ours, content hash differs | `replace` | Deploy; plan shows `old → new` |
-| 4 | Ours, but modified at the destination | `block` | Local edits would be lost |
-| 5 | Owned by a different consumer CLI | `block` | Plan names the owning CLI |
-| 6 | Present but absent from the ledger | `block` | Not managed by this consumer |
+| 2 | Deployed by the acting consumer, content hash matches | `keep` | No action |
+| 3 | Deployed by the acting consumer, content hash differs | `replace` | Deploy; plan shows `old → new` |
+| 4 | Deployed by the acting consumer, modified at the destination | `block` | Local edits would be lost |
+| 5 | Deployed by a different consumer | `block` | Plan names the owning consumer |
+| 6 | Present but absent from the ledger | `block` | No consumer deployed it |
 
 - **R10.1** A plan containing any `block` MUST cause `--apply` to refuse, unless
   `--force` is passed.
@@ -299,14 +304,15 @@ Two files, two different questions, following the `package.json` /
 | Written by | a human, or a consumer CLI | a consumer CLI only |
 
 - **R11.1** The `skillwire` package MUST NOT read or write
-  `~/.agents/.skill-lock.json`. That file belongs to `npx skills`, whose implementation **deletes it outright** when
-  it encounters a version lower than its current one. Sharing it would mean
+  `~/.agents/.skill-lock.json`. That file belongs to `npx skills`, whose
+  implementation **deletes it outright** when it encounters a version lower than
+  its current one. Sharing it would mean
   losing the ledger on an unrelated tool's upgrade.
 - **R11.2** The ledger key MUST be the full tuple of 10.1. `npx skills` keys by
   skill name alone and records no per-host state; that shape cannot express the
   model of the `skillwire` package.
 - **R11.3** The ledger MUST record, per unit: source type, source reference,
-  resolved destination path, content hash, owning consumer CLI, artifact version,
+  resolved destination path, content hash, owning consumer, artifact version,
   and timestamps.
 - **R11.4** Paths stored in the manifest MUST be relative and use `/` separators,
   so a manifest is portable across machines and operating systems.
@@ -405,12 +411,12 @@ code/cli/assets/skills/modules/
   domains belongs in `core`. This is what makes "what do I deploy here?"
   answerable: `core`, plus the domains in play.
 - **R13.2** Artifact names MUST be globally unique across all modules and all
-  consumer CLIs. A module is source-tree organisation only; deployment is flat.
+  consumers. A module is source-tree organisation only; deployment is flat.
 - **R13.3** Version and provenance live in the `metadata` map of the `SKILL.md`
   frontmatter, which the specification defines as a string→string map. A separate
   `skill.yaml` is prohibited: it would create a second source of truth for the
   same fact. `CHANGELOG.md` is permitted, as the specification does not cover it.
-- **R13.4** Every consumer CLI holds its own skills under its own
+- **R13.4** Every consumer holds its own skills under its own
   `assets/skills/modules/`. There is no shared skill directory across consumers,
   and no build step copying skills between layers.
 - **R13.5** Conforming to `SKILL.md` is sufficient compatibility with the wider
@@ -458,7 +464,7 @@ CLIs or their official documentation — before the corresponding feature is bui
 | **P2** | Host matrix, host detection, visibility graph | `skill list` and `skill doctor` correct on a real machine |
 | **P3** | `skill deploy` / `skill remove`, ledger, manifest | Idempotent; every `block` state reproducible in a test |
 | **P4** | `skillwire_cli`: the `skillwire` executable and its `sw` alias | Self-hosting: this repo's own skills deploy through it |
-| **P5** | Adoption by `macss` and `inquiry` | Both consume the package; no forked deployment logic remains |
+| **P5** | Adoption by `macss` and `inquiry` | Both consume the `skillwire` package; no forked deployment logic remains |
 | **P6** | Subagents | Only after Q1 and Q2 are closed |
 
 **R15.1** `kind` and `subagent` MUST be present in the resolver signature and in
