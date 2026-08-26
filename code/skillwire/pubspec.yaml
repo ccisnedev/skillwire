@@ -20,3 +20,11 @@ dependencies:
 dev_dependencies:
   lints: ^6.1.0
   test: ^1.31.0
+
+# `cyberware` is how the family is declared. No package owns the word — it is
+# the category, and skillwire and datajack are two pieces of it. pub.dev makes
+# that browsable, which prose in a README cannot.
+topics:
+  - agent-skills
+  - cyberware
+  - macss

@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.2.0
+
+The consumer-facing half of the domain, which had been sitting in a CLI by
+accident.
+
+`Workspace`, `Catalogue`, `Planner` and `Scan` move in from `skillwire_cli`.
+They import no command-line framework and never did: reading an asset tree,
+resolving a host's paths, scanning directories and building a desired state know
+nothing about flags. Measuring that is what separated them from the surface that
+went the other way, into [`datajack`](https://pub.dev/packages/datajack).
+
+- **`Workspace`** — home, environment, repository root, matrix and ledger,
+  gathered once so nothing downstream reads the environment for itself.
+- **`Catalogue`** — a consumer's own `assets/skills/modules/<module>/<skill>/`,
+  read into materialised trees. It also answers the question R13.2 asks:
+  which names appear in more than one module, since deployment is flat.
+- **`Planner`** — turns a selection into desired units, observes what is at each
+  destination, and produces the plan annotations of PRD 7.5.
+- **`scanHosts`** — walks every directory a detected host reads, alias spellings
+  included, and creates nothing while looking.
+
+`skillwire` still depends on `preview_executor` and nothing else above it. What
+changed is where the line falls, and it now falls where measurement put it
+rather than where a rule did.
+
 ## 0.1.0
 
 First working release: the domain model, reconciliation as a pure function, the
