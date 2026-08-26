@@ -3,9 +3,13 @@
 Phases are defined in [`PRD.md`](PRD.md) section 15. Each one lists its exit
 criterion; a phase is not done until that criterion is met.
 
+[`runbook.md`](runbook.md) is the executable form of this list: 63 numbered
+stages, each with a mechanically verifiable exit criterion.
+
 ## P0 — Specification
 
-- [x] Host matrix verified against the hosts themselves
+- [x] Host matrix verified against the hosts themselves, **except OpenCode's
+      global directory — see Q4**
 - [x] Cross-host visibility graph
 - [x] Deployment mechanism decided and recorded (ADR 0002)
 - [x] Reconciliation states enumerated
@@ -13,25 +17,33 @@ criterion; a phase is not done until that criterion is met.
 - [x] CLI contract defined
 - [x] Name decided and recorded (ADR 0003)
 - [x] How the name is written decided and recorded (ADR 0004)
+- [x] Reviewed against the runbook's traceability pass; six gaps found and four
+      closed in Draft 2 (annotations, adoption, the ledger's home, the error
+      hierarchy)
 - [ ] Reviewed
 
 ## P1 — Domain and reconciliation
 
 - [ ] Domain model, with `kind` and `subagent` in the resolver signature
+- [ ] Typed error hierarchy, sealed root (R12.7)
 - [ ] `plan(observed, desired)` as a pure function
-- [ ] Every reconciliation state unit-tested with no filesystem
+- [ ] Every reconciliation state unit-tested with no filesystem, adoption
+      included (R10.6)
 
 ## P2 — Hosts
 
+- [ ] **Q4 closed: which directory OpenCode actually reads.** On the critical
+      path — it blocks OpenCode at `global` scope
 - [ ] Host matrix as a data file
 - [ ] Host detection
-- [ ] Visibility graph and its reporting
+- [ ] Visibility graph and its reporting, carried as plan annotations (§7.5)
 - [ ] `skill list` and `skill doctor`
 
 ## P3 — Deployment
 
 - [ ] `skill deploy` and `skill remove` as Steps
-- [ ] Ledger
+- [ ] Ledger — one per machine, shared by every consumer (R11.5, R11.6)
+- [ ] Adoption of pre-package deployments (R10.6)
 - [ ] Manifest
 - [ ] Idempotence and every `block` state covered by a test
 
@@ -44,6 +56,9 @@ criterion; a phase is not done until that criterion is met.
 
 - [ ] `macss` consumes the `skillwire` package
 - [ ] `inquiry` consumes the `skillwire` package
+- [ ] `inquiry`'s `clean()` narrowed to what it actually wrote — it deletes ten
+      host directories wholesale today
+- [ ] The three transversal skills moved out of `inquiry` into `skillwire_cli`
 - [ ] No forked deployment logic left in either
 
 ## P6 — Subagents

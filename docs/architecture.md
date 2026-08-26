@@ -177,10 +177,19 @@ See [ADR 0002](adr/0002-copy-not-link.md).
 - **Visibility graph.** Some hosts read other hosts' directories. The graph is
   part of the same data file, and every plan reports the consequences for hosts
   that are detected but were not named.
-- **Ledger.** Machine-local, keyed by `(artifact, kind, host, scope, subagent?)`,
-  recording the owning consumer. It is what makes a copy distinguishable from a
-  file somebody else put there.
+- **Plan annotations.** A unit can be correct *and* have a consequence the user
+  cannot infer. That is a second axis, not a seventh reconciliation state: an
+  annotation attaches to a unit and changes no verb. Visibility and the global
+  Claude/OpenCode asymmetry are its first two members. See PRD 7.5.
+- **Ledger.** **One per machine, shared by all three consumers**, keyed by
+  `(artifact, kind, host, scope, subagent?)` and recording the owning consumer.
+  It is what makes a copy distinguishable from a file somebody else put there.
+  Shared rather than per-consumer because a consumer that can read only its own
+  ledger cannot answer *which other consumer owns this* — and cannot answer it
+  at all for a consumer it has never heard of. See PRD R11.5.
 - **Manifest.** Repository-level and committed, declaring what a repo wants
   deployed. Manifest is to ledger as `package.json` is to `package-lock.json`.
-- **Errors.** Typed hierarchy in the `skillwire` package, surfaced by the SDK's
-  exit codes.
+- **Errors.** Typed hierarchy in the `skillwire` package, rooted in one sealed
+  type and surfaced by the SDK's exit codes. Every condition a caller must
+  distinguish gets its own type, so no consumer matches on message text. See
+  PRD R12.7.
