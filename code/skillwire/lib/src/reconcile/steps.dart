@@ -18,9 +18,13 @@ abstract interface class DeploymentSink {
   /// Remove [destination] and everything under it.
   Future<void> deleteTree(String destination);
 
-  /// Record [unit] in the ledger as owned by the acting consumer, holding
-  /// [contentHash].
-  Future<void> record(Unit unit, String contentHash);
+  /// Record [unit] in the ledger as owned by the acting consumer, deployed at
+  /// [destination] and holding [contentHash].
+  ///
+  /// [destination] is passed rather than looked up because R6.2 requires the
+  /// resolved directory — which of a host's several the run chose — to reach
+  /// the ledger, and the step is what knows it.
+  Future<void> record(Unit unit, String destination, String contentHash);
 
   /// Drop [unit] from the ledger.
   Future<void> forget(Unit unit);
@@ -107,7 +111,7 @@ class ApplyUnit extends ReconcileStep {
     if (writesDestination) {
       await sink.writeTree(destination, tree);
     }
-    await sink.record(unit, contentHash);
+    await sink.record(unit, destination, contentHash);
     return Outcome(verb: verb, target: destination, detail: _detail);
   }
 }

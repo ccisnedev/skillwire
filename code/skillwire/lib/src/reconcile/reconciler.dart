@@ -55,7 +55,7 @@ class _InertSink implements DeploymentSink {
   Future<void> deleteTree(String d) => _refuse();
 
   @override
-  Future<void> record(Unit u, String h) => _refuse();
+  Future<void> record(Unit u, String d, String h) => _refuse();
 
   @override
   Future<void> forget(Unit u) => _refuse();

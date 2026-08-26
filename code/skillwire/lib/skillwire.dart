@@ -18,6 +18,10 @@ export 'src/hosts/resolution.dart' show HostDetector, PathResolver;
 export 'src/validate/skill_validator.dart'
     show Finding, SkillFrontmatter, SkillValidator, ValidationResult;
 
+export 'src/io/filesystem.dart'
+    show FilesystemSink, LedgerFile, observe, readTree;
+export 'src/ledger/ledger.dart' show Ledger, LedgerRow, SourceType;
+
 export 'src/reconcile/reconciler.dart' show Plan, reconcile;
 export 'src/reconcile/state.dart'
     show Desired, LedgerRecord, Observed, Operation, Verb;
