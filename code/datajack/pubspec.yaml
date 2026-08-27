@@ -16,12 +16,6 @@ dependencies:
   path: ^1.9.1
   skillwire: ^0.2.0
 
-# While skillwire 0.2.0 is unpublished. Removed once it is on pub.dev; the
-# constraint above is what ships.
-dependency_overrides:
-  skillwire:
-    path: ../skillwire
-
 dev_dependencies:
   lints: ^6.1.0
   test: ^1.31.0
