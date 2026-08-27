@@ -39,3 +39,9 @@ npm-debug.log*
 # Coverage
 coverage/
 .nyc_output/
+
+# Lockfiles. The Dart convention splits by package kind: an application pins its
+# resolution so every machine builds the same bytes, a library must not, because
+# its consumers do the resolving. skillwire_cli is an application and commits
+# its lock; the skillwire package is a library and does not.
+code/skillwire/pubspec.lock
