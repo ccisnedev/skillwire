@@ -20,7 +20,10 @@ dependencies:
   path: ^1.9.1
   skillwire: ^0.2.0
 
-# Until skillwire 0.2.0 and datajack 0.1.0 are on pub.dev.
+# Both are published, and both are also developed in this repository. The
+# overrides keep this CLI building against the working tree rather than
+# against the last release, so a change to either package is exercised by
+# `skillwire_cli`'s tests before it is published rather than after.
 dependency_overrides:
   datajack:
     path: ../datajack
