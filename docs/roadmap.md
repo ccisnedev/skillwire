@@ -19,7 +19,7 @@ stages, each with a mechanically verifiable exit criterion.
 - [x] Reviewed against the runbook's traceability pass; six gaps found and four
       closed in Draft 2 (annotations, adoption, the ledger's home, the error
       hierarchy)
-- [ ] Reviewed
+- [x] Reviewed
 
 ## P1 — Domain and reconciliation
 
@@ -51,12 +51,12 @@ stages, each with a mechanically verifiable exit criterion.
 
 ## P5 — Adoption
 
-- [ ] `macss` consumes the `skillwire` package
-- [ ] `inquiry` consumes the `skillwire` package
-- [ ] `inquiry`'s `clean()` narrowed to what it actually wrote — it deletes ten
+- [x] `macss` consumes the `skillwire` package
+- [x] `inquiry` consumes the `skillwire` package
+- [x] `inquiry`'s `clean()` narrowed to what it actually wrote — it deletes ten
       host directories wholesale today
 - [x] The three transversal skills moved out of `inquiry` into `skillwire_cli`
-- [ ] No forked deployment logic left in either
+- [x] No forked deployment logic left in either
 
 ## P6 — Subagents
 
