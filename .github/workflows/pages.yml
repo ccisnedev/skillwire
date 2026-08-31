@@ -40,14 +40,15 @@ jobs:
         with:
           path: repo/skillwire
 
-      # `design_system` is private, so the job token cannot read it: GITHUB_TOKEN
-      # is scoped to this repository alone. The secret is a fine-grained PAT with
-      # read-only Contents on that one repository and nothing else.
+      # No token. `design_system` was made public on 2026-08-31 precisely so this
+      # step would not need one: GITHUB_TOKEN is scoped to the repository running
+      # the job, so reading a second repository would have meant a PAT — and a
+      # fine-grained PAT expires, which would have stopped this deploy silently
+      # on a date nobody has written down.
       - uses: actions/checkout@v4
         with:
           repository: ccisnedev/design_system
           path: repo/design_system
-          token: ${{ secrets.DESIGN_SYSTEM_TOKEN }}
 
       - uses: dart-lang/setup-dart@v1
         with:
