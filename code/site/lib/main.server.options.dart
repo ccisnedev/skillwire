@@ -9,6 +9,7 @@ import 'package:design_system/src/layout.dart' as _layout;
 import 'package:design_system/src/terminal.dart' as _terminal;
 import 'package:skillwire_site/sections/colophon.dart' as _colophon;
 import 'package:skillwire_site/sections/embedding.dart' as _embedding;
+import 'package:skillwire_site/sections/install.dart' as _install;
 import 'package:skillwire_site/sections/masthead.dart' as _masthead;
 import 'package:skillwire_site/sections/provenance.dart' as _provenance;
 import 'package:skillwire_site/sections/rules.dart' as _rules;
@@ -37,6 +38,7 @@ ServerOptions get defaultServerOptions => ServerOptions(
     ..._terminal.Terminal.styles,
     ..._colophon.Colophon.styles,
     ..._embedding.Embedding.styles,
+    ..._install.Install.styles,
     ..._masthead.Masthead.styles,
     ..._provenance.Provenance.styles,
     ..._rules.Rules.styles,

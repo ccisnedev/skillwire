@@ -4,10 +4,10 @@ import 'package:jaspr/jaspr.dart';
 
 /// What this is, and what a reader can actually get today.
 ///
-/// The status line is not modesty. `skillwire_cli` is unpublished, so a page
-/// offering an install command for it would be advertising something that does
-/// not exist — and the whole argument of this project is that a tool must not
-/// claim what it does not do.
+/// The status line says what actually ships, which is now two things rather
+/// than one: a binary you can install, and the packages under it. It said
+/// otherwise until the CLI had releases — a page must not offer what does not
+/// exist, and until this week the install command did not.
 class Masthead extends StatelessComponent {
   const Masthead({super.key});
 
@@ -19,12 +19,11 @@ class Masthead extends StatelessComponent {
           'was never trained on.'),
     ]),
     p(classes: 'status', [
-      .text('Two Dart packages on pub.dev — '),
+      .text('A command line, and the two Dart packages underneath it — '),
       a(href: 'https://pub.dev/packages/skillwire', [.text('skillwire 0.2.0')]),
       .text(' and '),
       a(href: 'https://pub.dev/packages/datajack', [.text('datajack 0.1.0')]),
-      .text('. The reference CLI is not published; what ships is the library '
-          'you mount in your own.'),
+      .text(' on pub.dev. Use the CLI, or mount the same module in your own.'),
     ]),
   ]);
 

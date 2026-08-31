@@ -3,6 +3,7 @@ import 'package:jaspr/jaspr.dart';
 
 import 'sections/colophon.dart';
 import 'sections/embedding.dart';
+import 'sections/install.dart';
 import 'sections/masthead.dart';
 import 'sections/problem.dart';
 import 'sections/proof.dart';
@@ -21,6 +22,7 @@ class App extends StatelessComponent {
   @override
   Component build(BuildContext context) => const Page(children: [
     Masthead(),
+    Install(),
     Problem(),
     Proof(),
     Provenance(),
