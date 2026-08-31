@@ -9,8 +9,11 @@ Hooks are worse, and in some hosts they have no destination at all.
 The `skillwire` package absorbs those differences. Define a capability once;
 it resolves where that capability must land, and in which shape, for each host.
 
-**Status:** specification complete, implementation not started.
-Read [`docs/PRD.md`](docs/PRD.md) first — it is the contract.
+**Status:** implemented and in use. The `skillwire` package and `datajack` are on
+pub.dev; `macss` and `inquiry` both mount the module. Read
+[`docs/PRD.md`](docs/PRD.md) first — it is the contract.
+
+The site is at [skillwire.ccisne.dev](https://skillwire.ccisne.dev).
 
 ---
 
@@ -25,6 +28,8 @@ At two scopes: `global` (user-level) and `repo` (repository-level).
 ```
 code/
   skillwire/   # the `skillwire` package — domain, reconciliation, matrix, ledger
+  datajack/    # the `datajack` package — the command-line surface over it
+  site/        # skillwire.ccisne.dev, as Jaspr source rather than as output
   cli/         # `skillwire_cli` — the canonical consumer
     assets/
       skills/
@@ -60,7 +65,7 @@ The module mounted in consumers is `skill`, singular.
 ## Not only for this CLI
 
 The `skillwire` package is a library, and `skillwire_cli` is its first consumer,
-not its only one. [`macss`](https://macss.dev) and `inquiry` embed the same
+not its only one. [`macss`](https://macss.ccisne.dev) and `inquiry` embed the same
 package and gain the same `skill` module, each shipping its own skills as assets
 of its own release.
 
@@ -84,5 +89,5 @@ The `skillwire` package is the wire.
 
 ---
 
-Built with [MACSS](https://macss.dev) — Modular Architecture for Comprehensive
+Built with [MACSS](https://macss.ccisne.dev) — Modular Architecture for Comprehensive
 Software Solutions.

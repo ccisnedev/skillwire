@@ -1,0 +1,160 @@
+# This repository ships three versioned artifacts, not one. `skillwire` and
+# `datajack` release to pub.dev, which carries their versions; only the CLI
+# needs a GitHub Release, because a binary has nowhere else to live. So the tag
+# is `cli-v…` rather than `v…` — a bare `v0.1.0` on a repository whose main
+# package is at 0.2.0 names nothing a reader can resolve, which is the ambiguity
+# ADR 0004 exists to refuse.
+name: Release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'code/cli/pubspec.yaml'
+
+defaults:
+  run:
+    working-directory: code/cli
+
+jobs:
+  # ─── Job 1: Is this a version bump? ────────────────────────────────────────
+  check-version:
+    name: Check version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.read.outputs.version }}
+      tag: ${{ steps.read.outputs.tag }}
+      should_release: ${{ steps.check.outputs.should_release }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read version from pubspec.yaml
+        id: read
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=cli-v$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Detected version: $VERSION"
+
+      # A merge that touches this pubspec without raising the version is the
+      # ordinary case — a dependency bump, a corrected comment. That is not a
+      # failed release; it is no release. Failing it would paint main red on
+      # every such merge, which is how a red mark stops meaning anything.
+      - name: Check whether the tag already exists
+        id: check
+        run: |
+          TAG="${{ steps.read.outputs.tag }}"
+          if git ls-remote --tags --exit-code origin "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists on the remote. Skipping release."
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Tag $TAG not found. Proceeding with the release."
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  # ─── Job 2: Create the release ─────────────────────────────────────────────
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: check-version
+    if: needs.check-version.outputs.should_release == 'true'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ needs.check-version.outputs.tag }}" \
+            --title "skillwire_cli ${{ needs.check-version.outputs.version }}" \
+            --notes "The \`skillwire\` executable, with \`legion\`, \`kritik\` and \`research\`.
+
+          Install:
+
+          \`\`\`powershell
+          irm https://skillwire.ccisne.dev/install.ps1 | iex
+          \`\`\`
+          \`\`\`bash
+          curl -fsSL https://skillwire.ccisne.dev/install.sh | bash
+          \`\`\`
+
+          See \`code/cli/CHANGELOG.md\`." \
+            --draft=false \
+            --prerelease=false
+
+  # ─── Job 3: Build and attach the binaries ──────────────────────────────────
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    needs: [check-version, create-release]
+    if: needs.check-version.outputs.should_release == 'true'
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            asset_name: skillwire-linux-x64.tar.gz
+            binary: skillwire
+          - os: windows-latest
+            asset_name: skillwire-windows-x64.zip
+            binary: skillwire.exe
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: dart pub get
+        run: dart pub get
+
+      - name: dart test
+        run: dart test
+
+      # Windows: Defender deletes dart.exe after `dart test`, so the SDK is
+      # reinstalled before compiling. Carried over from macss's workflow, where
+      # it was found the hard way.
+      - name: Re-setup Dart (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Remove-Item -Recurse -Force "C:\hostedtoolcache\windows\dart" -ErrorAction SilentlyContinue
+          Remove-Item -Force "D:\a\_temp\dartsdk-windows-x64-release.zip" -ErrorAction SilentlyContinue
+      - uses: dart-lang/setup-dart@v1
+        if: runner.os == 'Windows'
+        with:
+          sdk: stable
+
+      - name: Compile the binary
+        run: dart compile exe bin/main.dart -o bin/${{ matrix.binary }}
+
+      # bin/ beside assets/ is not a convention, it is the contract:
+      # `Workspace.defaultAssetsRoot()` resolves skills as
+      # `<dir of the exe>/../assets`. Flatten this and `skill deploy` finds an
+      # empty catalogue at run time rather than failing here.
+      - name: Package (Linux — tar.gz)
+        if: runner.os == 'Linux'
+        run: |
+          mkdir -p dist/bin dist/assets
+          cp bin/${{ matrix.binary }} dist/bin/
+          cp -r assets/* dist/assets/
+          cd dist && tar czf ../${{ matrix.asset_name }} .
+
+      - name: Package (Windows — zip)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist\bin, dist\assets | Out-Null
+          Copy-Item bin\${{ matrix.binary }} dist\bin\
+          Copy-Item -Recurse assets\* dist\assets\
+          Compress-Archive -Path dist\* -DestinationPath ${{ matrix.asset_name }} -Force
+
+      - name: Upload the asset
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${{ needs.check-version.outputs.tag }}" "${{ matrix.asset_name }}" --clobber
