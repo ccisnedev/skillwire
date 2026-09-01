@@ -45,3 +45,8 @@ coverage/
 # its consumers do the resolving. skillwire_cli is an application and commits
 # its lock; the skillwire package is a library and does not.
 code/skillwire/pubspec.lock
+
+# Local dependency overrides. The site pins the design system to a commit;
+# an override is for iterating on both at once and must never be committed,
+# or CI would build against a directory it does not have.
+pubspec_overrides.yaml

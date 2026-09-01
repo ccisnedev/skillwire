@@ -156,9 +156,11 @@ packages:
   design_system:
     dependency: "direct main"
     description:
-      path: "../../../design_system/code/design_system"
-      relative: true
-    source: path
+      path: "code/design_system"
+      ref: "0f4d35ed0c9d80e4f21613ec6b6ac4a0af712efc"
+      resolved-ref: "0f4d35ed0c9d80e4f21613ec6b6ac4a0af712efc"
+      url: "https://github.com/ccisnedev/design_system"
+    source: git
     version: "0.0.0"
   ffi:
     dependency: transitive
