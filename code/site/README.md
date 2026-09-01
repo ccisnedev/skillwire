@@ -26,22 +26,34 @@ jaspr build                          # → build/jaspr/
 nothing, since there is no client entrypoint. Only `index.html` and
 `favicon.ico` need to be deployed.
 
-## The design system is a sibling checkout
+## The design system is a pinned commit
 
-[`design_system`](https://github.com/ccisnedev/design_system) is depended on by
-`path:`, not by version. It is deliberately unpublished — see that repository's
-`docs/adr/0002` — so `pubspec.yaml` points at a directory:
+[`design_system`](https://github.com/ccisnedev/design_system) is a git
+dependency, pinned to a commit:
 
 ```yaml
 design_system:
-  path: ../../../design_system/code/design_system
+  git:
+    url: https://github.com/ccisnedev/design_system
+    path: code/design_system
+    ref: <commit>
 ```
 
-**It must be checked out beside `skillwire`.** That holds locally and in CI:
-`pages.yml` clones both repositories as siblings under `repo/`, because
-`actions/checkout` cannot write outside the workspace and the relative path has
-to resolve either way.
+Not a path, and not a version. A relative path needed the two repositories
+checked out as siblings, which a runner does not do on its own — every workflow
+that built this site had to clone the other repository into a contrived layout
+first. And there is no version to depend on: `publish_to: none` over there is
+deliberate, so a commit is what there is to name.
 
-A change in `design_system` does not touch this repository and so does not
-trigger a deploy. Until the design system is published and this site depends on
-a version, redeploying after a change over there is `workflow_dispatch`.
+**The pin is the useful part.** A change over there does not reach this site
+until that `ref` moves, and moving it is a commit here — which triggers the
+deploy like any other change. Unpinned, the published page and its source would
+drift apart with nothing saying so.
+
+To iterate on both at once, add a `pubspec_overrides.yaml` (git-ignored):
+
+```yaml
+dependency_overrides:
+  design_system:
+    path: ../../../design_system/code/design_system
+```

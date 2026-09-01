@@ -1,6 +1,5 @@
 # macss and inquiry upload `code/site` as it stands, because their sites are
-# hand-written HTML. This one is Jaspr source and has to be built, and the build
-# needs a second repository — so this workflow is that shape and not theirs.
+# hand-written HTML. This one is Jaspr source and has to be built.
 name: Deploy Pages
 
 on:
@@ -10,10 +9,6 @@ on:
     paths:
       - 'code/site/**'
       - '.github/workflows/pages.yml'
-  # The page's appearance depends on `design_system`, whose commits do not touch
-  # this repository and therefore never trigger the push filter above. Until the
-  # design system is published and this site depends on a version, a redeploy
-  # after a change over there is a manual act.
   workflow_dispatch:
 
 permissions:
@@ -31,24 +26,10 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      # Both repositories are checked out as siblings under `repo/`, because
-      # `code/site` depends on the design system by the relative path
-      # `../../../design_system/code/design_system` and actions/checkout cannot
-      # write outside the workspace. From `repo/skillwire/code/site`, three
-      # levels up is `repo/` — which is exactly where the sibling has to be.
+      # One checkout. The design system arrives as a pinned git dependency, so
+      # there is no sibling repository to arrange and no contrived directory
+      # layout to keep in step with a relative path.
       - uses: actions/checkout@v4
-        with:
-          path: repo/skillwire
-
-      # No token. `design_system` was made public on 2026-08-31 precisely so this
-      # step would not need one: GITHUB_TOKEN is scoped to the repository running
-      # the job, so reading a second repository would have meant a PAT — and a
-      # fine-grained PAT expires, which would have stopped this deploy silently
-      # on a date nobody has written down.
-      - uses: actions/checkout@v4
-        with:
-          repository: ccisnedev/design_system
-          path: repo/design_system
 
       - uses: dart-lang/setup-dart@v1
         with:
@@ -59,19 +40,18 @@ jobs:
       - run: dart pub global activate jaspr_cli 0.23.4
 
       - name: Build the site
-        working-directory: repo/skillwire/code/site
+        working-directory: code/site
         run: |
           dart pub get
           dart pub global run jaspr_cli:jaspr build
 
       # Three things `jaspr build` leaves behind that a published site should
-      # not carry, found by running this build in the CI layout rather than
-      # locally:
+      # not carry:
       #
       #   packages/         emitted by build_web_compilers for a client
       #                     entrypoint this site does not have. Nothing in
       #                     index.html references it, and it is the difference
-      #                     between publishing 14 KB and publishing 700.
+      #                     between publishing 25 KB and publishing 700.
       #   .dart_tool/       package_config.json, which records absolute paths on
       #                     the build machine.
       #   .build.manifest   an index of the above.
@@ -79,17 +59,17 @@ jobs:
       # deploy-pages runs no Jekyll, so dotfiles are published as they are; they
       # do not disappear on their own.
       - name: Drop what the artifact should not carry
-        working-directory: repo/skillwire/code/site/build/jaspr
+        working-directory: code/site/build/jaspr
         run: rm -rf packages .dart_tool .build.manifest
 
       - uses: actions/configure-pages@v5
 
-      # `web/CNAME` is copied to the build root by `jaspr build`, so the custom
-      # domain travels with the artifact rather than being repository state
-      # somebody has to remember.
+      # `web/CNAME` is copied to the build root by `jaspr build`. The custom
+      # domain is also declared in the repository's Pages settings, which is
+      # what actually attaches it — in Actions mode the file alone does not.
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: repo/skillwire/code/site/build/jaspr
+          path: code/site/build/jaspr
 
       - id: deployment
         uses: actions/deploy-pages@v4
