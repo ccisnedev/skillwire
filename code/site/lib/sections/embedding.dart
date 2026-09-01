@@ -41,7 +41,7 @@ ModularCli().module(
         .text(' is the command-line surface over it: five routes, their '
             'parameters, and their exit codes. Adding it gives your CLI a '),
         code([.text('skill')]),
-        .text(' module that ships your skills, not somebody else’s.'),
+        .text(' module that ships your skills.'),
       ]),
       const Terminal(
         caption: 'What to add',

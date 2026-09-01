@@ -2,22 +2,27 @@ import 'package:design_system/design_system.dart';
 import 'package:jaspr/dom.dart';
 import 'package:jaspr/jaspr.dart';
 
-/// Two transcripts, verbatim.
+/// One transcript, verbatim.
 ///
-/// Both were captured from `skillwire_cli` 0.1.0 on 2026-08-27 and are pasted
-/// unedited. A page that says a tool refuses to guess is asking to be believed;
-/// a page that shows the refusal is not.
+/// Captured from `skillwire_cli` 0.1.0 on 2026-08-27 and pasted unedited.
 class Proof extends StatelessComponent {
   const Proof({super.key});
 
   @override
   Component build(BuildContext context) => Band(
-    heading: 'It refuses to guess',
+    heading: 'Every parameter is required',
     children: [
       p([
-        .text('There is no implicit host, no implicit scope and no implicit '
-            '“everything”. Each omission is answered by naming what is '
-            'missing, not by choosing on the reader’s behalf.'),
+        code([.text('--host')]),
+        .text(', '),
+        code([.text('--scope')]),
+        .text(', and one of '),
+        code([.text('--skill')]),
+        .text(', '),
+        code([.text('--module')]),
+        .text(' or '),
+        code([.text('--all')]),
+        .text('. A missing one is named.'),
       ]),
       const Terminal(
         caption: 'skillwire_cli 0.1.0 — captured 2026-08-27, unedited',
@@ -55,24 +60,17 @@ class Proof extends StatelessComponent {
         ],
       ),
       p([
-        .text('The last column is the part no host will tell you. OpenCode '
-            'reads Claude Code’s directory, so a skill deployed for one '
-            'is answering for both — and the two cannot hold different '
-            'variants of it at global scope.'),
+        .text('OpenCode reads Claude Code’s directory. A skill deployed for '
+            'one answers for both, so at global scope they hold the same '
+            'variant. The last column says which hosts share a directory.'),
       ]),
       p([
-        .text('Nothing is written without being described first, and the '
-            'description is not a flag you may forget:'),
+        .text('Every command takes '),
+        code([.text('--plan')]),
+        .text(' or '),
+        code([.text('--apply')]),
+        .text('.'),
       ]),
-      const Terminal(
-        caption: 'skillwire_cli 0.1.0 — captured 2026-08-27, unedited',
-        lines: [
-          Line.typed('skillwire skill deploy --host claude --scope global --all'),
-          Line.printed('Error: Choose --plan or --apply.'),
-          Line.printed('  --plan   show what would change; nothing is touched'),
-          Line.printed('  --apply  show it, ask for approval, then do it'),
-        ],
-      ),
     ],
   );
 }

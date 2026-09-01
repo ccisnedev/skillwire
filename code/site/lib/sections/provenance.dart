@@ -28,10 +28,9 @@ class Provenance extends StatelessComponent {
     heading: 'Every path says where it came from',
     children: [
       p([
-        .text('A host’s directories change, and a table that cannot say '
-            'when it was last checked is a guess wearing a table’s '
-            'clothes. Each row below carries the artifact it was read from and '
-            'the date. A row without one does not resolve — it throws.'),
+        .text('A host’s directories change. Each row carries the artifact '
+            'it was read from and the date it was read. A row without them '
+            'throws.'),
       ]),
       div(classes: 'scroller', [
         table([
@@ -57,9 +56,8 @@ class Provenance extends StatelessComponent {
         ]),
       ]),
       p(classes: 'aside', [
-        .text('Two of these were wrong when they were first written down, and '
-            'reading the hosts themselves is what found it: Antigravity’s '
-            'roots were both incorrect, and OpenCode turned out to read both '
+        .text('Reading the hosts themselves corrected two rows: '
+            'Antigravity’s roots were both wrong, and OpenCode reads two '
             'spellings of its own directory.'),
       ]),
     ],
