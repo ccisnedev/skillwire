@@ -157,8 +157,8 @@ packages:
     dependency: "direct main"
     description:
       path: "code/design_system"
-      ref: "0f4d35ed0c9d80e4f21613ec6b6ac4a0af712efc"
-      resolved-ref: "0f4d35ed0c9d80e4f21613ec6b6ac4a0af712efc"
+      ref: ed30a0c37902df29926c02e150a25208780add82
+      resolved-ref: ed30a0c37902df29926c02e150a25208780add82
       url: "https://github.com/ccisnedev/design_system"
     source: git
     version: "0.0.0"

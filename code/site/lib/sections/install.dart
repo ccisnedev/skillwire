@@ -16,13 +16,13 @@ class Install extends StatelessComponent {
   Component build(BuildContext context) => Band(
     heading: 'Install',
     children: [
-      const Listing(
+      const Command(
         caption: 'Windows · PowerShell',
-        source: 'irm https://skillwire.ccisne.dev/install.ps1 | iex\n',
+        command: 'irm https://skillwire.ccisne.dev/install.ps1 | iex',
       ),
-      const Listing(
+      const Command(
         caption: 'Linux · bash',
-        source: 'curl -fsSL https://skillwire.ccisne.dev/install.sh | bash\n',
+        command: 'curl -fsSL https://skillwire.ccisne.dev/install.sh | bash',
       ),
       p([
         .text('Both fetch the latest release, unpack it into '),
@@ -31,15 +31,14 @@ class Install extends StatelessComponent {
         code([.text('~/.skillwire')]),
         .text(', add it to your PATH and create the '),
         code([.text('sw')]),
-        .text(' alias. There is no macOS build yet.'),
+        .text(' alias.'),
       ]),
       p(classes: 'aside', [
-        .text('Read them before you run them — '),
+        .text('Both scripts are worth a minute before you run them: '),
         a(href: 'https://skillwire.ccisne.dev/install.ps1', [.text('install.ps1')]),
         .text(', '),
         a(href: 'https://skillwire.ccisne.dev/install.sh', [.text('install.sh')]),
-        .text('. Piping a script from the internet into a shell is worth that '
-            'minute, here as anywhere.'),
+        .text('.'),
       ]),
       p([
         .text('Then, from anywhere:'),
