@@ -25,7 +25,10 @@ T translating<T>(T Function() build) {
 /// compile time rather than falling through to a generic code. That is the
 /// whole reason R12.7 requires the hierarchy to be sealed.
 CommandException asCommandException(SkillwireError e) => CommandException(
-  code: e.code,
+  // [SkillwireError.code] is stable snake_case (its own contract forbids
+  // rewording it); CommandException.id requires kebab-case. The dash swap
+  // happens here, at the boundary, rather than in the domain package.
+  id: e.code.replaceAll('_', '-'),
   message: e.message,
   exitCode: switch (e) {
     UnknownHost() => ExitCode.invalidUsage,

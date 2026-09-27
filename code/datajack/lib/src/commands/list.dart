@@ -12,10 +12,7 @@ class SkillListInput extends Input {
 
   final Selection selection;
 
-  static final List<CliParam> params = SelectionParams.shared;
-
-  @override
-  List<CliParam> get schemaFields => params;
+  static final contract = CliContract(options: SelectionParams.shared);
 
   @override
   Map<String, dynamic> toJson() => {
@@ -64,8 +61,16 @@ class SkillListRow {
     'alsoVisibleFrom': alsoVisibleFrom,
   };
 
-  List<String> get cells =>
-      [name, version, module, kind, host, scope, status, alsoVisibleFrom];
+  List<String> get cells => [
+    name,
+    version,
+    module,
+    kind,
+    host,
+    scope,
+    status,
+    alsoVisibleFrom,
+  ];
 }
 
 class SkillListOutput extends Output {
@@ -74,7 +79,9 @@ class SkillListOutput extends Output {
   final List<SkillListRow> rows;
 
   @override
-  Map<String, dynamic> toJson() => {'rows': [for (final r in rows) r.toJson()]};
+  Map<String, dynamic> toJson() => {
+    'rows': [for (final r in rows) r.toJson()],
+  };
 
   @override
   int get exitCode => ExitCode.ok;
@@ -158,8 +165,8 @@ class SkillListCommand implements Query<SkillListInput, SkillListOutput> {
 
     return SkillListOutput(
       rows: [
-        for (final unit in desired.keys.toList()
-          ..sort((a, b) => a.key.compareTo(b.key)))
+        for (final unit
+            in desired.keys.toList()..sort((a, b) => a.key.compareTo(b.key)))
           SkillListRow(
             name: unit.artifact,
             version: catalogue.byName(unit.artifact)?.version ?? '',

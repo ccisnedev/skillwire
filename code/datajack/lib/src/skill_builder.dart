@@ -19,9 +19,8 @@ import 'commands/list.dart';
 /// answers and rejects `--plan`/`--apply`; a Command changes something and must
 /// say what it would change first (R12.4).
 ///
-/// Every route passes `params:` — `const []` at minimum. A Query registered
-/// with `params: null` silently accepts `--plan`, because the SDK short-circuits
-/// its own argument check when a command declares no contract.
+/// Every route passes `contract:` explicitly — `CliContract.none` at minimum,
+/// since the SDK requires one rather than defaulting to it silently.
 /// [consumer] is the CLI on whose behalf this module acts. It is written into
 /// every ledger row the module creates, and it is the only thing that makes PRD
 /// 10.2 state 5 — "deployed by a different consumer" — answerable for the
@@ -35,41 +34,51 @@ void buildSkillModule(
 }) {
   m.query<SkillListInput, SkillListOutput>(
     'list',
-    (req) => translating(() => SkillListCommand(
-      SkillListInput.fromCliRequest(req, catalogue),
-      consumer: consumer,
-      workspace: workspace,
-      catalogue: catalogue,
-    )),
+    (req) => translating(
+      () => SkillListCommand(
+        SkillListInput.fromCliRequest(req, catalogue),
+        consumer: consumer,
+        workspace: workspace,
+        catalogue: catalogue,
+      ),
+    ),
     description: 'Catalogue and status in one table, with what else can see it',
-    params: SkillListInput.params,
+    globals: true,
+    contract: SkillListInput.contract,
   );
 
   m.command<SkillChangeInput, SkillChangeOutput>(
     'deploy',
-    (req) => translating(() => SkillChangeCommand(
-      SkillChangeInput.fromCliRequest(req, catalogue),
-      consumer: consumer,
-      workspace: workspace,
-      catalogue: catalogue,
-      operation: Operation.deploy,
-    )),
+    (req) => translating(
+      () => SkillChangeCommand(
+        SkillChangeInput.fromCliRequest(req, catalogue),
+        consumer: consumer,
+        workspace: workspace,
+        catalogue: catalogue,
+        operation: Operation.deploy,
+      ),
+    ),
     description: 'Reconcile a host toward the skills this release ships',
-    params: SkillChangeInput.params,
+    globals: true,
+    contract: SkillChangeInput.contract,
   );
 
   m.command<SkillChangeInput, SkillChangeOutput>(
     'remove',
-    (req) => translating(() => SkillChangeCommand(
-      SkillChangeInput.fromCliRequest(req, catalogue),
-      consumer: consumer,
-      workspace: workspace,
-      catalogue: catalogue,
-      operation: Operation.remove,
-    )),
-    description: 'Reconcile a host away from them, touching only what this '
+    (req) => translating(
+      () => SkillChangeCommand(
+        SkillChangeInput.fromCliRequest(req, catalogue),
+        consumer: consumer,
+        workspace: workspace,
+        catalogue: catalogue,
+        operation: Operation.remove,
+      ),
+    ),
+    description:
+        'Reconcile a host away from them, touching only what this '
         'consumer deployed',
-    params: SkillChangeInput.params,
+    globals: true,
+    contract: SkillChangeInput.contract,
   );
 
   m.query<SkillDoctorInput, SkillDoctorOutput>(
@@ -80,7 +89,8 @@ void buildSkillModule(
       workspace: workspace,
     ),
     description: 'Report what is deployed, who owns it, and what has drifted',
-    params: SkillDoctorInput.params,
+    globals: true,
+    contract: SkillDoctorInput.contract,
   );
 
   m.query<SkillValidateInput, SkillValidateOutput>(
@@ -89,8 +99,10 @@ void buildSkillModule(
       SkillValidateInput.fromCliRequest(req),
       catalogue: catalogue,
     ),
-    description: 'Check this release\'s skills against the Agent Skills '
+    description:
+        'Check this release\'s skills against the Agent Skills '
         'specification',
-    params: SkillValidateInput.params,
+    globals: true,
+    contract: SkillValidateInput.contract,
   );
 }

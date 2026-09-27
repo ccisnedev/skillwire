@@ -3,20 +3,17 @@ import 'package:modular_cli_sdk/modular_cli_sdk.dart';
 import 'package:path/path.dart' as p;
 import 'package:skillwire/skillwire.dart';
 
-
 // ─── validate ───────────────────────────────────────────────────────────────
 
 class SkillValidateInput extends Input {
   SkillValidateInput();
 
-  factory SkillValidateInput.fromCliRequest(CliRequest req) => SkillValidateInput();
+  factory SkillValidateInput.fromCliRequest(CliRequest req) =>
+      SkillValidateInput();
 
   /// Takes nothing. Conformance is a property of what this release ships, not
   /// of where it might be deployed, so a host or a scope would be noise.
-  static const List<CliParam> params = [];
-
-  @override
-  List<CliParam> get schemaFields => params;
+  static const contract = CliContract.none;
 
   @override
   Map<String, dynamic> toJson() => const {};
@@ -53,7 +50,9 @@ class SkillValidateOutput extends Output {
       return 'This release ships no skills.';
     }
     for (final d in duplicates) {
-      lines.add('$d: appears in more than one module; deployment is flat (R13.2)');
+      lines.add(
+        '$d: appears in more than one module; deployment is flat (R13.2)',
+      );
     }
     for (final r in results) {
       if (r.isValid) {
@@ -102,10 +101,7 @@ class SkillDoctorInput extends Input {
 
   /// Takes nothing on purpose. Doctor's job is to report the machine as it is,
   /// and a filter would let a user narrow away the thing that is wrong.
-  static const List<CliParam> params = [];
-
-  @override
-  List<CliParam> get schemaFields => params;
+  static const contract = CliContract.none;
 
   @override
   Map<String, dynamic> toJson() => const {};
@@ -227,20 +223,29 @@ class SkillDoctorOutput extends Output {
       }
       for (final directory in byDirectory.keys.toList()..sort()) {
         final occupants = byDirectory[directory]!;
-        final readers =
-            occupants.first.readBy.map((r) => '${r.$1}/${r.$2.token}').join(', ');
+        final readers = occupants.first.readBy
+            .map((r) => '${r.$1}/${r.$2.token}')
+            .join(', ');
         out.add('  $directory   (read by $readers)');
-        out.add('    ${(occupants.map((u) => u.name).toList()..sort()).join(', ')}');
+        out.add(
+          '    ${(occupants.map((u) => u.name).toList()..sort()).join(', ')}',
+        );
         final declared = {
           for (final u in occupants)
             if (u.declaredOrigin != null) u.declaredOrigin!,
         };
         if (declared.isNotEmpty) {
-          out.add('    appears to be from: ${(declared.toList()..sort()).join(', ')}');
+          out.add(
+            '    appears to be from: ${(declared.toList()..sort()).join(', ')}',
+          );
         }
       }
-      out.add('  Left alone. Deploying an artifact of the same name over one of');
-      out.add('  these blocks (PRD 10.2 state 6); --force adopts it only when the');
+      out.add(
+        '  Left alone. Deploying an artifact of the same name over one of',
+      );
+      out.add(
+        '  these blocks (PRD 10.2 state 6); --force adopts it only when the',
+      );
       out.add('  contents already match (R10.6).');
     }
 
@@ -252,7 +257,9 @@ class SkillDoctorOutput extends Output {
       if (actionable.isNotEmpty) {
         out.add('  Needs attention — ${actionable.length}:');
         for (final d in actionable) {
-          out.add('    ${d.artifact}  (seen twice by ${d.host} at ${d.scope.token})');
+          out.add(
+            '    ${d.artifact}  (seen twice by ${d.host} at ${d.scope.token})',
+          );
           for (final path in d.paths) {
             out.add('      $path');
           }
@@ -261,12 +268,19 @@ class SkillDoctorOutput extends Output {
 
       // Counted and named on one line, never spelled out. Nobody can do
       // anything about these, so detail would only bury what they can.
-      final expected =
-          [for (final d in diagnosis.duplicates) if (d.isExpected) d];
+      final expected = [
+        for (final d in diagnosis.duplicates)
+          if (d.isExpected) d,
+      ];
       if (expected.isNotEmpty) {
-        final names = (expected.map((d) => d.artifact).toSet().toList()..sort());
-        out.add('  Irreducible (PRD 7.4) — ${names.length}: ${names.join(', ')}');
-        out.add('    Deployed to two hosts at global scope, one of which reads');
+        final names = (expected.map((d) => d.artifact).toSet().toList()
+          ..sort());
+        out.add(
+          '  Irreducible (PRD 7.4) — ${names.length}: ${names.join(', ')}',
+        );
+        out.add(
+          '    Deployed to two hosts at global scope, one of which reads',
+        );
         out.add("    the other's directory and cannot be prevented.");
       }
     }
@@ -276,7 +290,9 @@ class SkillDoctorOutput extends Output {
     for (final line in provenance) {
       out.add('  $line');
     }
-    out.add('  R14.2: a row whose cited version is behind the installed one is');
+    out.add(
+      '  R14.2: a row whose cited version is behind the installed one is',
+    );
     out.add('  unverified again. Re-read the host before trusting it.');
 
     return out.join('\n');
@@ -339,8 +355,9 @@ class SkillDoctorCommand implements Query<SkillDoctorInput, SkillDoctorOutput> {
   Future<SkillDoctorOutput> execute() async {
     final detected = workspace.detectedHosts;
     final ledger = workspace.ledgerFile.read();
-    final validator =
-        SkillValidator(reservedNames: workspace.matrix.reservedNames);
+    final validator = SkillValidator(
+      reservedNames: workspace.matrix.reservedNames,
+    );
 
     return SkillDoctorOutput(
       consumer: consumer,
@@ -371,8 +388,9 @@ class SkillDoctorCommand implements Query<SkillDoctorInput, SkillDoctorOutput> {
   List<String> _provenance(Set<String> detected) => [
     for (final id in detected.toList()..sort())
       for (final scope in Scope.values)
-        for (final d in workspace.matrix.host(id).skills[scope] ??
-            const <HostDirectory>[])
+        for (final d
+            in workspace.matrix.host(id).skills[scope] ??
+                const <HostDirectory>[])
           '$id/${scope.token}  ${d.template}  <- ${d.provenance.source} '
               '(${d.provenance.read})',
   ];
