@@ -82,6 +82,26 @@ void main() {
     return (code, out.toString());
   }
 
+  /// Like [run], but keeps stdout and stderr apart: `--json` writes success
+  /// output to stdout and the error envelope to stderr, and a test asserting
+  /// on either one needs to see it without the other mixed in.
+  Future<(int, String, String)> runSplit(List<String> args) async {
+    final out = StringBuffer();
+    final err = StringBuffer();
+    final ws = workspace();
+    final code = await runSkillwire(
+      args,
+      stdout: _BufferSink(out),
+      stderr: _BufferSink(err),
+      workspace: ws,
+      catalogue: Catalogue.read(
+        assets,
+        validator: SkillValidator(reservedNames: ws.matrix.reservedNames),
+      ),
+    );
+    return (code, out.toString(), err.toString());
+  }
+
   String claudeSkills() => p.join(home, '.claude', 'skills');
 
   group('R12.2 - nothing is implicit', () {
@@ -1021,6 +1041,26 @@ void main() {
       expect(code, 0);
       expect(out, contains('skillwire'));
     });
+
+    test(
+      '--json reports the full {name, version} object, on stdout only',
+      () async {
+        // A substring check on plain text output would pass even if
+        // VersionPlugin were built without the CLI's own name (it would just
+        // print whatever name it fell back to). Decoding the full object and
+        // comparing it to exactly {name, version} is what actually pins
+        // VersionPlugin down to `ModularCli(name: 'skillwire', ...)`.
+        final (code, out, err) = await runSplit(['version', '--json']);
+        expect(code, 0);
+        expect(err, isEmpty);
+        final pubspec = File('pubspec.yaml').readAsStringSync();
+        final declared = RegExp(
+          r'^version:\s*(\S+)',
+          multiLine: true,
+        ).firstMatch(pubspec)!.group(1)!;
+        expect(jsonDecode(out), {'name': 'skillwire', 'version': declared});
+      },
+    );
   });
 
   group('doctor - the CLI installation, via DoctorPlugin', () {
@@ -1029,6 +1069,57 @@ void main() {
       expect(code, 0);
       // Nothing yet contributes to doctor.checks, so the report is empty.
       expect(out, contains('No doctor checks are registered.'));
+    });
+  });
+
+  group('the --json error envelope (0.2.0 breaking change from 0.1.0)', () {
+    test('a missing parameter decodes to error.id/message/exitCode', () async {
+      final (code, out, err) = await runSplit([
+        'skill',
+        'deploy',
+        '--scope',
+        'global',
+        '--all',
+        '--plan',
+        '--json',
+      ]);
+      expect(code, 64);
+      expect(out, isEmpty);
+      final error =
+          (jsonDecode(err) as Map<String, dynamic>)['error']
+              as Map<String, dynamic>;
+      expect(error, {
+        'id': 'missing-parameter',
+        'message': '--host is required and has no default (R12.2).',
+        'exitCode': 64,
+      });
+    });
+
+    test('a domain error (an unknown --host) keeps the same shape, with its '
+        'own id and exit code', () async {
+      final (code, out, err) = await runSplit([
+        'skill',
+        'deploy',
+        '--host',
+        'bogus',
+        '--scope',
+        'global',
+        '--all',
+        '--plan',
+        '--json',
+      ]);
+      expect(code, 7);
+      expect(out, isEmpty);
+      final error =
+          (jsonDecode(err) as Map<String, dynamic>)['error']
+              as Map<String, dynamic>;
+      expect(error, {
+        'id': 'validation-failed',
+        'message':
+            'No host named "bogus". Known hosts: antigravity, claude, '
+            'codex, copilot, opencode.',
+        'exitCode': 7,
+      });
     });
   });
 }
