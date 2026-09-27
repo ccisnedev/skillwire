@@ -119,8 +119,9 @@ abstract final class SelectionParams {
       if (module != null && module.isNotEmpty) moduleFlag,
       if (all) allFlag,
     ];
-    if (given.isEmpty)
+    if (given.isEmpty) {
       throw const MissingParameter('--skill, --module or --all');
+    }
     if (given.length > 1) {
       throw CommandException(
         id: 'ambiguous-selection',
