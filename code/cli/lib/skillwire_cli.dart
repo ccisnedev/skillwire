@@ -12,11 +12,13 @@ import 'package:skillwire/skillwire.dart';
 
 import 'package:datajack/datajack.dart';
 
-import 'modules/skill/version.dart';
-
 /// The name this CLI writes into every ledger row it creates, and the name the
 /// other two consumers see in a `block` when they meet one of its artifacts.
 const consumerName = 'skillwire_cli';
+
+/// Kept in step with `pubspec.yaml` by `version_test.dart`, because a version a
+/// binary reports that its package does not carry is worse than none.
+const skillwireCliVersion = '0.1.0';
 
 /// The SDK routes every help request itself. Only `--version` needs
 /// normalising, since it has no version convention of its own.
@@ -38,13 +40,21 @@ Future<int> runSkillwire(
   Catalogue? catalogue,
 }) async {
   final ws = workspace ?? Workspace.detect();
-  final cat = catalogue ??
+  final cat =
+      catalogue ??
       Catalogue.read(
         ws.assetsRoot,
         validator: SkillValidator(reservedNames: ws.matrix.reservedNames),
       );
 
-  final cli = ModularCli();
+  final cli =
+      ModularCli(
+          name: 'skillwire',
+          version: skillwireCliVersion,
+          suggestionDistance: 2,
+        )
+        ..plugin(VersionPlugin(version: skillwireCliVersion))
+        ..plugin(const DoctorPlugin());
 
   // R12.1 — the module is `skill`, singular, in every consumer. Two modules
   // differing by a single `s` are prohibited, and this CLI is the reference for
@@ -58,7 +68,6 @@ Future<int> runSkillwire(
       catalogue: cat,
     ),
   );
-  cli.module('', (m) => buildVersionRoute(m));
 
   return cli.run(
     normaliseArgs(args),

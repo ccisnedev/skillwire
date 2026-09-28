@@ -11,12 +11,14 @@ class SkillChangeInput extends Input {
     required this.applying,
   });
 
-  factory SkillChangeInput.fromCliRequest(CliRequest req, Catalogue catalogue) =>
-      SkillChangeInput(
-        selection: SelectionParams.read(req, catalogue),
-        force: req.flagBool(SelectionParams.forceFlag),
-        applying: req.flagBool('apply'),
-      );
+  factory SkillChangeInput.fromCliRequest(
+    CliRequest req,
+    Catalogue catalogue,
+  ) => SkillChangeInput(
+    selection: SelectionParams.read(req, catalogue),
+    force: req.flagBool(SelectionParams.forceFlag),
+    applying: req.flagBool('apply'),
+  );
 
   final Selection selection;
 
@@ -31,10 +33,7 @@ class SkillChangeInput extends Input {
   /// refusing to show them is the opposite of what a plan is for.
   final bool applying;
 
-  static final List<CliParam> params = SelectionParams.withForce;
-
-  @override
-  List<CliParam> get schemaFields => params;
+  static final contract = CliContract(options: SelectionParams.withForce);
 
   @override
   Map<String, dynamic> toJson() => {
@@ -79,7 +78,8 @@ class SkillChangeOutput extends Output {
 /// One class for both because they are the same operation in two directions:
 /// reconcile toward a desired state, or away from it. The verbs differ; the
 /// read, the pure decision and the write do not.
-class SkillChangeCommand implements Command<SkillChangeInput, SkillChangeOutput> {
+class SkillChangeCommand
+    implements Command<SkillChangeInput, SkillChangeOutput> {
   SkillChangeCommand(
     this.input, {
     required this.consumer,
@@ -172,7 +172,7 @@ class SkillChangeCommand implements Command<SkillChangeInput, SkillChangeOutput>
       ].join('\n');
 
       throw CommandException(
-        code: 'plan_contains_blocks',
+        id: 'plan-contains-blocks',
         message:
             'This plan would leave ${_plan!.blocked.length} unit(s) untouched, '
             'and refuses to apply:\n\n$reasons\n\n'

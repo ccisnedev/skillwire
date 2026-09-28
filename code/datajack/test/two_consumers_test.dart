@@ -51,7 +51,6 @@ void main() {
     return root;
   }
 
-
   /// Mount the module as [consumer] and run one invocation.
   Future<(int, String)> run(
     String consumer,
@@ -74,7 +73,7 @@ void main() {
       validator: SkillValidator(reservedNames: workspace.matrix.reservedNames),
     );
 
-    final cli = ModularCli();
+    final cli = ModularCli(suggestionDistance: 2);
     cli.module(
       'skill',
       (m) => buildSkillModule(
@@ -89,11 +88,22 @@ void main() {
     return (code, buffer.toString());
   }
 
-  Future<(int, String)> deploy(String consumer, String assets, {bool force = false}) =>
-      run(consumer, assets, [
-        'skill', 'deploy', '--host', 'claude', '--scope', 'global', '--all',
-        '--apply', '--autoapprove', if (force) '--force',
-      ]);
+  Future<(int, String)> deploy(
+    String consumer,
+    String assets, {
+    bool force = false,
+  }) => run(consumer, assets, [
+    'skill',
+    'deploy',
+    '--host',
+    'claude',
+    '--scope',
+    'global',
+    '--all',
+    '--apply',
+    '--autoapprove',
+    if (force) '--force',
+  ]);
 
   group('one module, two consumers, one ledger', () {
     test('each records itself as the owner', () async {
@@ -108,21 +118,25 @@ void main() {
       expect(owners, {'macss-plan': 'macss', 'iq-review': 'inquiry'});
     });
 
-    test('R11.5 - one file holds both, which is what makes state 5 answerable',
-        () async {
-      await deploy('macss', assetsFor('macss', ['macss-plan']));
-      await deploy('inquiry', assetsFor('inquiry', ['iq-review']));
+    test(
+      'R11.5 - one file holds both, which is what makes state 5 answerable',
+      () async {
+        await deploy('macss', assetsFor('macss', ['macss-plan']));
+        await deploy('inquiry', assetsFor('inquiry', ['iq-review']));
 
-      final ledger = LedgerFile(sharedLedger).read();
-      expect(ledger.ownedBy('macss'), hasLength(1));
-      expect(ledger.ownedBy('inquiry'), hasLength(1));
-    });
+        final ledger = LedgerFile(sharedLedger).read();
+        expect(ledger.ownedBy('macss'), hasLength(1));
+        expect(ledger.ownedBy('inquiry'), hasLength(1));
+      },
+    );
 
     test('the second consumer blocks on the first one\'s artifact', () async {
       // Both ship a skill of the same name — the collision the ledger exists
       // to make visible. Whoever gets there first owns it.
       final macss = assetsFor('macss', ['shared-name'], body: 'macss body');
-      final inquiry = assetsFor('inquiry', ['shared-name'], body: 'inquiry body');
+      final inquiry = assetsFor('inquiry', [
+        'shared-name',
+      ], body: 'inquiry body');
 
       final (firstCode, _) = await deploy('macss', macss);
       expect(firstCode, 0);
@@ -134,17 +148,21 @@ void main() {
 
     test('and --force does not lift it (rule 1)', () async {
       final macss = assetsFor('macss', ['shared-name'], body: 'macss body');
-      final inquiry = assetsFor('inquiry', ['shared-name'], body: 'inquiry body');
+      final inquiry = assetsFor('inquiry', [
+        'shared-name',
+      ], body: 'inquiry body');
 
       await deploy('macss', macss);
       final (code, _) = await deploy('inquiry', inquiry, force: true);
 
       expect(code, isNot(0));
       expect(
-        File(p.join(home, '.claude', 'skills', 'shared-name', 'SKILL.md'))
-            .readAsStringSync(),
+        File(
+          p.join(home, '.claude', 'skills', 'shared-name', 'SKILL.md'),
+        ).readAsStringSync(),
         contains('macss body'),
-        reason: 'the first consumer\'s bytes must survive the second\'s --force',
+        reason:
+            'the first consumer\'s bytes must survive the second\'s --force',
       );
     });
 
@@ -154,12 +172,22 @@ void main() {
 
       await deploy('macss', macss);
       await run('inquiry', inquiry, [
-        'skill', 'remove', '--host', 'claude', '--scope', 'global', '--all',
-        '--apply', '--force', '--autoapprove',
+        'skill',
+        'remove',
+        '--host',
+        'claude',
+        '--scope',
+        'global',
+        '--all',
+        '--apply',
+        '--force',
+        '--autoapprove',
       ]);
 
       expect(
-        Directory(p.join(home, '.claude', 'skills', 'shared-name')).existsSync(),
+        Directory(
+          p.join(home, '.claude', 'skills', 'shared-name'),
+        ).existsSync(),
         isTrue,
       );
     });
@@ -171,8 +199,15 @@ void main() {
       await deploy('inquiry', inquiry);
 
       await run('macss', macss, [
-        'skill', 'remove', '--host', 'claude', '--scope', 'global', '--all',
-        '--apply', '--autoapprove',
+        'skill',
+        'remove',
+        '--host',
+        'claude',
+        '--scope',
+        'global',
+        '--all',
+        '--apply',
+        '--autoapprove',
       ]);
 
       final skills = p.join(home, '.claude', 'skills');
@@ -183,16 +218,21 @@ void main() {
   });
 
   group('doctor speaks for whoever mounted it', () {
-    test('it names its own consumer, and counts the other as foreign', () async {
-      await deploy('macss', assetsFor('macss', ['macss-plan']));
-      await deploy('inquiry', assetsFor('inquiry', ['iq-review']));
+    test(
+      'it names its own consumer, and counts the other as foreign',
+      () async {
+        await deploy('macss', assetsFor('macss', ['macss-plan']));
+        await deploy('inquiry', assetsFor('inquiry', ['iq-review']));
 
-      final (_, out) = await run('macss', assetsFor('macss', ['macss-plan']), [
-        'skill', 'doctor',
-      ]);
-      expect(out, contains('Deployed by macss, intact: 1'));
-      expect(out, contains('Deployed by another consumer: 1'));
-    });
+        final (_, out) = await run(
+          'macss',
+          assetsFor('macss', ['macss-plan']),
+          ['skill', 'doctor'],
+        );
+        expect(out, contains('Deployed by macss, intact: 1'));
+        expect(out, contains('Deployed by another consumer: 1'));
+      },
+    );
 
     test('the same machine reads differently to the other consumer', () async {
       await deploy('macss', assetsFor('macss', ['macss-plan']));

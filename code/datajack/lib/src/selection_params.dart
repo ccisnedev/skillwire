@@ -2,7 +2,6 @@ import 'package:cli_router/cli_router.dart';
 import 'package:modular_cli_sdk/modular_cli_sdk.dart';
 import 'package:skillwire/skillwire.dart';
 
-
 /// The parameter contract every route in this module shares, and the rules that
 /// make R12.2 true rather than aspirational.
 ///
@@ -24,25 +23,55 @@ abstract final class SelectionParams {
   static final List<CliParam> shared = [
     CliParam.string(
       hostsFlag,
+      abbr: null,
+      required: false,
+      repeatable: false,
+      defaultValue: null,
       description:
           'Hosts to act on, comma-separated: claude,codex,antigravity,opencode,copilot. '
           'Required; there is no implicit "all hosts" (R12.2)',
     ),
-    CliParam.string(
+    CliParam.enumeration(
       scopeFlag,
-      allowed: ['global', 'repo'],
-      description: 'global (user-level) or repo (repository-level). Required; '
+      abbr: null,
+      required: false,
+      repeatable: false,
+      values: const ['global', 'repo'],
+      defaultValue: null,
+      description:
+          'global (user-level) or repo (repository-level). Required; '
           'there is no default (R12.2)',
     ),
-    CliParam.string(skillFlag, description: 'One artifact by name'),
-    CliParam.string(moduleFlag, description: 'Every artifact in one module'),
-    CliParam.boolean(allFlag, description: 'Every artifact this release ships'),
+    CliParam.string(
+      skillFlag,
+      abbr: null,
+      required: false,
+      repeatable: false,
+      defaultValue: null,
+      description: 'One artifact by name',
+    ),
+    CliParam.string(
+      moduleFlag,
+      abbr: null,
+      required: false,
+      repeatable: false,
+      defaultValue: null,
+      description: 'Every artifact in one module',
+    ),
+    CliParam.flag(
+      allFlag,
+      abbr: null,
+      repeatable: false,
+      description: 'Every artifact this release ships',
+    ),
   ];
 
   static final List<CliParam> withForce = [
     ...shared,
-    CliParam.boolean(
+    CliParam.flag(
       forceFlag,
+      abbr: null,
+      repeatable: false,
       description:
           'Let an apply proceed past a plan containing blocks, and adopt an '
           'unledgered destination whose contents already match (R10.6). It '
@@ -90,10 +119,12 @@ abstract final class SelectionParams {
       if (module != null && module.isNotEmpty) moduleFlag,
       if (all) allFlag,
     ];
-    if (given.isEmpty) throw const MissingParameter('--skill, --module or --all');
+    if (given.isEmpty) {
+      throw const MissingParameter('--skill, --module or --all');
+    }
     if (given.length > 1) {
       throw CommandException(
-        code: 'ambiguous_selection',
+        id: 'ambiguous-selection',
         message:
             'Give exactly one of --skill, --module or --all; got ${given.map((g) => '--$g').join(' and ')}.',
         exitCode: ExitCode.invalidUsage,
@@ -105,8 +136,9 @@ abstract final class SelectionParams {
       final found = catalogue.inModule(module);
       if (found.isEmpty) {
         throw CommandException(
-          code: 'unknown_module',
-          message: 'No module named "$module". This release ships: '
+          id: 'unknown-module',
+          message:
+              'No module named "$module". This release ships: '
               '${catalogue.modules.join(', ')}.',
           exitCode: ExitCode.notFound,
         );
@@ -116,8 +148,9 @@ abstract final class SelectionParams {
     final found = catalogue.byName(skill!);
     if (found == null) {
       throw CommandException(
-        code: 'unknown_skill',
-        message: 'No skill named "$skill". This release ships: '
+        id: 'unknown-skill',
+        message:
+            'No skill named "$skill". This release ships: '
             '${catalogue.names.join(', ')}.',
         exitCode: ExitCode.notFound,
       );
