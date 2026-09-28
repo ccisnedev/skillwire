@@ -16,7 +16,7 @@ executables:
 dependencies:
   cli_router: ^0.2.0
   datajack: ^0.2.0
-  modular_cli_sdk: ^0.7.0
+  modular_cli_sdk: ^0.8.0
   path: ^1.9.1
   skillwire: ^0.2.0
 

@@ -2,7 +2,7 @@
 
 ## 0.2.0
 
-Migrated to `cli_router` ^0.2.0 and `modular_cli_sdk` ^0.7.0.
+Migrated to `cli_router` ^0.2.0 and `modular_cli_sdk` ^0.8.0.
 
 - Every `CliParam.string`/`.boolean` declaration now uses the SDK's
   type-specific factories (`CliParam.string`, `.enumeration`, `.flag`) with
@@ -38,7 +38,7 @@ Old (0.1.0, `cli_router` 0.1.0's own error rendering):
 }
 ```
 
-New (0.2.0, `modular_cli_sdk` 0.7.0's `CommandException.toJson`):
+New (0.2.0, `modular_cli_sdk` 0.8.0's `CommandException.toJson`):
 
 ```json
 {
