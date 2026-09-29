@@ -11,6 +11,13 @@ their rationale belong in `docs/adr/`.
 
 ## [Unreleased]
 
+### skillwire_cli 0.1.1
+
+- Requires `modular_cli_sdk` ^0.8.1 and `cli_router` ^0.2.1: options may now
+  follow operands (GNU order), for example `skillwire help skill --json`.
+  Setting `POSIXLY_CORRECT` restores strict POSIX order, where that invocation
+  is rejected as `misplaced-option`.
+
 ### Added
 
 - Specification of the `skillwire` package in `docs/PRD.md`: host matrix,
