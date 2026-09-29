@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.2.1
+
+Bumped to `cli_router` ^0.2.1 and `modular_cli_sdk` ^0.8.1.
+
+- `cli_router` 0.2.1 accepts an option written after an operand by default
+  (GNU permutation) and only rejects it as `misplaced-option` when the
+  environment holds `POSIXLY_CORRECT`, matching `getopt`'s own convention.
+  Neither behavior is new to this package's own five routes, none of which
+  declares a positional operand, but it now applies to any command a
+  consumer mounts alongside `skill` that does.
+- `modular_cli_sdk` 0.8.1's `ModularCli.run` accepts an optional
+  `environment` map and forwards it to `cli_router`, which is what lets a
+  caller choose strict ordering without touching the real process
+  environment (used by this package's own tests).
+- `CliInstallationConfig.alias` is now optional and `PlatformOps` is resolved
+  lazily; this package does not use either.
+
+No route, validation message or exit code changed.
+
 ## 0.2.0
 
 Migrated to `cli_router` ^0.2.0 and `modular_cli_sdk` ^0.8.0.

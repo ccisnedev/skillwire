@@ -18,7 +18,7 @@ const consumerName = 'skillwire_cli';
 
 /// Kept in step with `pubspec.yaml` by `version_test.dart`, because a version a
 /// binary reports that its package does not carry is worse than none.
-const skillwireCliVersion = '0.1.0';
+const skillwireCliVersion = '0.1.1';
 
 /// The SDK routes every help request itself. Only `--version` needs
 /// normalising, since it has no version convention of its own.

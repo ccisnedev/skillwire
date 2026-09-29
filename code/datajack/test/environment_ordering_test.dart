@@ -92,38 +92,30 @@ void main() {
   }
 
   group('cli_router 0.2.1 - option ordering honors POSIXLY_CORRECT', () {
-    test(
-      'the built-in help command accepts an option after its operand by '
-      'default (GNU permutation)',
-      () async {
-        final (code, _, err) = await run([
-          'help',
-          '--json',
-          'skill',
-          '--quiet',
-        ], environment: {});
-        expect(code, 0);
-        expect(err, isEmpty);
-      },
-    );
+    test('the built-in help command accepts an option after its operand by '
+        'default (GNU permutation)', () async {
+      final (code, _, err) = await run([
+        'help',
+        '--json',
+        'skill',
+        '--quiet',
+      ], environment: {});
+      expect(code, 0);
+      expect(err, isEmpty);
+    });
 
-    test(
-      'the same invocation is rejected as misplaced-option under '
-      'POSIXLY_CORRECT',
-      () async {
-        final (code, _, err) = await run([
-          'help',
-          '--json',
-          'skill',
-          '--quiet',
-        ], environment: {'POSIXLY_CORRECT': '1'});
-        expect(code, isNot(0));
-        final error =
-            (jsonDecode(err) as Map<String, dynamic>)['error']
-                as Map<String, dynamic>;
-        expect(error['id'], 'misplaced-option');
-      },
-    );
+    test('the same invocation is rejected as misplaced-option under '
+        'POSIXLY_CORRECT', () async {
+      final (code, _, err) = await run(
+        ['help', '--json', 'skill', '--quiet'],
+        environment: {'POSIXLY_CORRECT': '1'},
+      );
+      expect(code, isNot(0));
+      final error =
+          (jsonDecode(err) as Map<String, dynamic>)['error']
+              as Map<String, dynamic>;
+      expect(error['id'], 'misplaced-option');
+    });
   });
 }
 

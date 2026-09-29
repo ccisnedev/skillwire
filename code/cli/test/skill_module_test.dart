@@ -1141,38 +1141,30 @@ void main() {
     // as `--quiet` written after it is exactly the case cli_router 0.2.1
     // permutes ahead of the operand by default, and rejects as
     // `misplaced-option` under `POSIXLY_CORRECT`.
-    test(
-      'help accepts an option after its operand by default '
-      '(GNU permutation)',
-      () async {
-        final (code, _, err) = await runSplit([
-          'help',
-          '--json',
-          'skill',
-          '--quiet',
-        ], environment: {});
-        expect(code, 0);
-        expect(err, isEmpty);
-      },
-    );
+    test('help accepts an option after its operand by default '
+        '(GNU permutation)', () async {
+      final (code, _, err) = await runSplit([
+        'help',
+        '--json',
+        'skill',
+        '--quiet',
+      ], environment: {});
+      expect(code, 0);
+      expect(err, isEmpty);
+    });
 
-    test(
-      'the same invocation is rejected as misplaced-option under '
-      'POSIXLY_CORRECT',
-      () async {
-        final (code, _, err) = await runSplit([
-          'help',
-          '--json',
-          'skill',
-          '--quiet',
-        ], environment: {'POSIXLY_CORRECT': '1'});
-        expect(code, isNot(0));
-        final error =
-            (jsonDecode(err) as Map<String, dynamic>)['error']
-                as Map<String, dynamic>;
-        expect(error['id'], 'misplaced-option');
-      },
-    );
+    test('the same invocation is rejected as misplaced-option under '
+        'POSIXLY_CORRECT', () async {
+      final (code, _, err) = await runSplit(
+        ['help', '--json', 'skill', '--quiet'],
+        environment: {'POSIXLY_CORRECT': '1'},
+      );
+      expect(code, isNot(0));
+      final error =
+          (jsonDecode(err) as Map<String, dynamic>)['error']
+              as Map<String, dynamic>;
+      expect(error['id'], 'misplaced-option');
+    });
   });
 }
 
