@@ -2,7 +2,7 @@ name: skillwire_cli
 description: >-
   Canonical command-line consumer of the skillwire package. Deploys skills to
   Claude Code, Codex, Antigravity, OpenCode and GitHub Copilot.
-version: 0.1.0
+version: 0.1.1
 publish_to: none
 repository: https://github.com/ccisnedev/skillwire
 
@@ -14,9 +14,9 @@ executables:
   sw: main
 
 dependencies:
-  cli_router: ^0.2.0
-  datajack: ^0.2.0
-  modular_cli_sdk: ^0.8.0
+  cli_router: ^0.2.1
+  datajack: ^0.2.1
+  modular_cli_sdk: ^0.8.1
   path: ^1.9.1
   skillwire: ^0.2.0
 

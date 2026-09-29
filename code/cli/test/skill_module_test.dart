@@ -65,7 +65,10 @@ void main() {
     ledgerFile: LedgerFile(p.join(tmp.path, 'state', 'ledger.json')),
   );
 
-  Future<(int, String)> run(List<String> args) async {
+  Future<(int, String)> run(
+    List<String> args, {
+    Map<String, String>? environment,
+  }) async {
     final out = StringBuffer();
     final sink = _BufferSink(out);
     final ws = workspace();
@@ -78,6 +81,7 @@ void main() {
         assets,
         validator: SkillValidator(reservedNames: ws.matrix.reservedNames),
       ),
+      environment: environment,
     );
     return (code, out.toString());
   }
@@ -85,7 +89,10 @@ void main() {
   /// Like [run], but keeps stdout and stderr apart: `--json` writes success
   /// output to stdout and the error envelope to stderr, and a test asserting
   /// on either one needs to see it without the other mixed in.
-  Future<(int, String, String)> runSplit(List<String> args) async {
+  Future<(int, String, String)> runSplit(
+    List<String> args, {
+    Map<String, String>? environment,
+  }) async {
     final out = StringBuffer();
     final err = StringBuffer();
     final ws = workspace();
@@ -98,6 +105,7 @@ void main() {
         assets,
         validator: SkillValidator(reservedNames: ws.matrix.reservedNames),
       ),
+      environment: environment,
     );
     return (code, out.toString(), err.toString());
   }
@@ -1120,6 +1128,42 @@ void main() {
             'codex, copilot, opencode.',
         'exitCode': 7,
       });
+    });
+  });
+
+  group('cli_router 0.2.1 - option ordering honors POSIXLY_CORRECT', () {
+    // None of the `skill` module's own routes (`deploy`, `remove`, `list`,
+    // `doctor`, `validate`) takes a positional operand: every one of them is
+    // flags only, so no route this CLI declares combines an operand with an
+    // option. The closest real command that does is the SDK's own built-in
+    // `help`, registered with a trailing wildcard (`help *`) precisely so a
+    // focus word (`help skill`) is a genuine operand; a global option such
+    // as `--quiet` written after it is exactly the case cli_router 0.2.1
+    // permutes ahead of the operand by default, and rejects as
+    // `misplaced-option` under `POSIXLY_CORRECT`.
+    test('help accepts an option after its operand by default '
+        '(GNU permutation)', () async {
+      final (code, _, err) = await runSplit([
+        'help',
+        '--json',
+        'skill',
+        '--quiet',
+      ], environment: {});
+      expect(code, 0);
+      expect(err, isEmpty);
+    });
+
+    test('the same invocation is rejected as misplaced-option under '
+        'POSIXLY_CORRECT', () async {
+      final (code, _, err) = await runSplit(
+        ['help', '--json', 'skill', '--quiet'],
+        environment: {'POSIXLY_CORRECT': '1'},
+      );
+      expect(code, isNot(0));
+      final error =
+          (jsonDecode(err) as Map<String, dynamic>)['error']
+              as Map<String, dynamic>;
+      expect(error['id'], 'misplaced-option');
     });
   });
 }
